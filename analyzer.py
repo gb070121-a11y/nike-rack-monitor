@@ -79,7 +79,7 @@ def is_black_image(b64_data: str) -> bool:
         # 가장 확실한 방법: 파일 크기로 판별
         # 암전 사진은 보통 100KB 미만 (일반 사진은 500KB~3MB)
         file_size = len(img_bytes)
-        if file_size < 150000:  # 150KB 미만이면 암전으로 판단
+        if file_size < 300000:  # 150KB 미만이면 암전으로 판단
             return True
         return False
 
