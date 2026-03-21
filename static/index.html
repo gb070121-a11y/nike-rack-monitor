@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RACK MONITOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #ff4d00;
+    --accent2: #ff8c42;
+    --green: #39d353;
+    --red: #f85149;
+    --yellow: #e3b341;
+    --text: #e8e8e8;
+    --muted: #666;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Noto Sans KR', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .store-tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .store-tab {
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .store-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-section {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+  .upload-section.drag-over {
+    border-color: var(--accent);
+    background: rgba(255,77,0,0.05);
+  }
+  .upload-section input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .upload-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .upload-sub {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── PREVIEW ── */
+  #preview-section { display: none; margin-top: 20px; }
+
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .preview-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+  .preview-count {
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .preview-thumb {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-thumb.black-frame {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 10px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── SUBMIT BUTTON ── */
+  .btn-analyze {
+    width: 100%;
+    margin-top: 20px;
+    padding: 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: none;
+  }
+  .btn-analyze:hover { background: #ff6520; transform: translateY(-1px); }
+  .btn-analyze:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* ── PROGRESS ── */
+  #progress-section { display: none; margin-top: 24px; }
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 4px;
+  }
+  .progress-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── RESULTS ── */
+  #results-section { display: none; margin-top: 32px; }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-badge {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── DIFF SUMMARY ── */
+  .diff-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .diff-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .diff-card.added { border-color: var(--green); }
+  .diff-card.removed { border-color: var(--red); }
+  .diff-card.changed { border-color: var(--yellow); }
+
+  .diff-num {
+    font-family: var(--font-display);
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .diff-card.added .diff-num { color: var(--green); }
+  .diff-card.removed .diff-num { color: var(--red); }
+  .diff-card.changed .diff-num { color: var(--yellow); }
+  .diff-label { font-size: 12px; color: var(--muted); }
+
+  /* ── CHANGE LIST ── */
+  .change-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+
+  .change-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .change-item.added { border-left: 3px solid var(--green); }
+  .change-item.removed { border-left: 3px solid var(--red); }
+  .change-item.changed { border-left: 3px solid var(--yellow); }
+
+  .change-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .added .change-badge { background: rgba(57,211,83,0.15); color: var(--green); }
+  .removed .change-badge { background: rgba(248,81,73,0.15); color: var(--red); }
+  .changed .change-badge { background: rgba(227,179,65,0.15); color: var(--yellow); }
+
+  .change-info { flex: 1; }
+  .change-sku {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .change-name { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .change-detail { font-size: 12px; color: var(--text); }
+  .change-detail .arrow { color: var(--accent); margin: 0 6px; }
+  .rack-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+
+  /* ── RACK TABLE ── */
+  .rack-block { margin-bottom: 28px; }
+  .rack-header {
+    background: var(--surface2);
+    border-radius: 6px 6px 0 0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .rack-num {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .rack-count { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+
+  .rack-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--border);
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+  }
+  .rack-table th {
+    background: var(--surface2);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .rack-table td {
+    padding: 11px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .rack-table tr:last-child td { border-bottom: none; }
+  .rack-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .sku-text { font-family: var(--font-mono); font-size: 12px; color: var(--accent2); }
+  .price-text { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+  .sale-price { color: var(--red); }
+  .orig-price { color: var(--muted); text-decoration: line-through; font-size: 11px; }
+  .discount-badge {
+    display: inline-block;
+    background: rgba(248,81,73,0.2);
+    color: var(--red);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 6px;
+  }
+
+  /* ── HISTORY ── */
+  #history-section { margin-top: 40px; }
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .history-meta { font-size: 12px; color: var(--muted); font-family: var(--font-mono); margin-top: 4px; }
+  .history-store {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .btn-load-history {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-load-history:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 24px;
+    font-size: 14px;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.error { border-color: var(--red); }
+  #toast.success { border-color: var(--green); }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .logo { font-size: 20px; }
+    .diff-summary { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .diff-num { font-size: 28px; }
+    .rack-table th, .rack-table td { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RACK<span>.</span>MONITOR</div>
+  <div class="store-tabs">
+    <button class="store-tab active" onclick="selectStore('gimhae')">김해</button>
+    <button class="store-tab" onclick="selectStore('jeonggwan')">정관</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- UPLOAD -->
+  <div class="upload-section" id="upload-zone">
+    <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
+    <span class="upload-icon">📸</span>
+    <div class="upload-title">SCAN UPLOAD</div>
+    <div class="upload-sub">
+      랙 사진을 한번에 선택하세요<br>
+      <strong>검은 암전 사진</strong>이 랙 구분자로 자동 인식됩니다<br>
+      <span style="color: var(--accent)">수십장 동시 업로드 가능</span>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div id="preview-section">
+    <div class="preview-header">
+      <div class="preview-title">PREVIEW</div>
+      <span class="preview-count" id="preview-count">0장</span>
+    </div>
+    <div class="preview-grid" id="preview-grid"></div>
+  </div>
+
+  <button class="btn-analyze" id="btn-analyze" onclick="submitScan()">
+    🔍 AI 분석 시작
+  </button>
+
+  <!-- PROGRESS -->
+  <div id="progress-section">
+    <div class="progress-text" id="progress-text">분석 준비 중...</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </div>
+
+  <hr class="divider" id="results-divider" style="display:none">
+
+  <!-- RESULTS -->
+  <div id="results-section">
+
+    <!-- DIFF -->
+    <div id="diff-block" style="display:none">
+      <div class="section-title">
+        변동 내역
+        <span class="section-badge" id="diff-compare-label"></span>
+      </div>
+      <div class="diff-summary">
+        <div class="diff-card added">
+          <div class="diff-num" id="diff-added">0</div>
+          <div class="diff-label">신규 추가</div>
+        </div>
+        <div class="diff-card removed">
+          <div class="diff-num" id="diff-removed">0</div>
+          <div class="diff-label">제거됨</div>
+        </div>
+        <div class="diff-card changed">
+          <div class="diff-num" id="diff-changed">0</div>
+          <div class="diff-label">가격 변동</div>
+        </div>
+      </div>
+      <div class="change-list" id="change-list"></div>
+    </div>
+
+    <!-- RACK DATA -->
+    <div class="section-title">
+      전체 랙 현황
+      <span class="section-badge" id="rack-session-label"></span>
+    </div>
+    <div id="rack-data"></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- HISTORY -->
+  <div id="history-section">
+    <div class="section-title">스캔 기록</div>
+    <div id="history-list" class="history-list">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>스캔 기록을 불러오는 중...</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+let selectedStore = 'gimhae';
+let selectedFiles = [];
+
+const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
+
+// ── STORE SELECT ──
+function selectStore(store) {
+  selectedStore = store;
+  document.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  loadHistory();
+}
+
+// ── FILE HANDLING ──
+function handleFiles(files) {
+  selectedFiles = Array.from(files);
+  if (!selectedFiles.length) return;
+
+  const preview = document.getElementById('preview-section');
+  const grid = document.getElementById('preview-grid');
+  const count = document.getElementById('preview-count');
+  const btn = document.getElementById('btn-analyze');
+
+  preview.style.display = 'block';
+  btn.style.display = 'block';
+  grid.innerHTML = '';
+  count.textContent = selectedFiles.length + '장';
+
+  selectedFiles.forEach(file => {
+    const div = document.createElement('div');
+    div.className = 'preview-thumb';
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        // 검은 암전 판별 (평균 밝기 < 15)
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(img.width, 32);
+        canvas.height = Math.min(img.height, 32);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let brightness = 0;
+        for (let i = 0; i < data.length; i += 4) brightness += (data[i] + data[i+1] + data[i+2]) / 3;
+        brightness /= (data.length / 4);
+
+        if (brightness < 20) {
+          div.classList.add('black-frame');
+          div.textContent = '■ 구분';
+        } else {
+          const imgEl = document.createElement('img');
+          imgEl.src = e.target.result;
+          div.appendChild(imgEl);
+        }
+      };
+    };
+    reader.readAsDataURL(file);
+    grid.appendChild(div);
+  });
+
+  // 드래그 앤 드롭 스타일
+  const zone = document.getElementById('upload-zone');
+  zone.style.borderStyle = 'solid';
+  zone.style.borderColor = 'var(--accent)';
+}
+
+// 드래그앤드롭
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+// ── SUBMIT ──
+async function submitScan() {
+  if (!selectedFiles.length) return;
+
+  const btn = document.getElementById('btn-analyze');
+  const progress = document.getElementById('progress-section');
+  const bar = document.getElementById('progress-bar');
+  const text = document.getElementById('progress-text');
+  const divider = document.getElementById('results-divider');
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+  divider.style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+
+  // 가짜 프로그레스 (실제 분석 중 애니메이션)
+  let fakeProgress = 0;
+  const fakeTimer = setInterval(() => {
+    fakeProgress = Math.min(fakeProgress + Math.random() * 8, 88);
+    bar.style.width = fakeProgress + '%';
+    const count = selectedFiles.length;
+    text.textContent = `${Math.floor(fakeProgress / 100 * count)}/${count}장 분석 중...`;
+  }, 600);
+
+  try {
+    const form = new FormData();
+    form.append('store', selectedStore);
+    selectedFiles.forEach(f => form.append('files', f));
+
+    text.textContent = 'GPT-4o 병렬 분석 중...';
+
+    const res = await fetch('/api/scan', { method: 'POST', body: form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    clearInterval(fakeTimer);
+    bar.style.width = '100%';
+    text.textContent = '✅ 분석 완료!';
+
+    setTimeout(() => {
+      progress.style.display = 'none';
+      renderResults(data);
+      loadHistory();
+    }, 600);
+
+  } catch (err) {
+    clearInterval(fakeTimer);
+    progress.style.display = 'none';
+    btn.disabled = false;
+    showToast('❌ 오류: ' + err.message, 'error');
+  }
+}
+
+// ── RENDER RESULTS ──
+function renderResults(data) {
+  const section = document.getElementById('results-section');
+  const divider = document.getElementById('results-divider');
+  section.style.display = 'block';
+  divider.style.display = 'block';
+
+  document.getElementById('rack-session-label').textContent =
+    `${STORE_LABELS[data.store]} · ${new Date().toLocaleString('ko-KR')} · ${data.racks.length}개 랙`;
+
+  // DIFF
+  const diff = data.diff;
+  if (diff && diff.has_previous) {
+    document.getElementById('diff-block').style.display = 'block';
+    document.getElementById('diff-compare-label').textContent =
+      `이전 스캔 (${diff.compared_with_date || ''}) 과 비교`;
+    document.getElementById('diff-added').textContent = diff.summary.added;
+    document.getElementById('diff-removed').textContent = diff.summary.removed;
+    document.getElementById('diff-changed').textContent = diff.summary.changed;
+
+    const changeList = document.getElementById('change-list');
+    changeList.innerHTML = '';
+
+    if (diff.changes.length === 0) {
+      changeList.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px">변동 없음</div>';
+    } else {
+      diff.changes.forEach(c => {
+        const div = document.createElement('div');
+        div.className = `change-item ${c.type}`;
+
+        const badges = { added: '신규', removed: '제거', changed: '변동' };
+        let detail = '';
+
+        if (c.type === 'added') {
+          detail = `<div class="change-detail">정가 ${fmt(c.new_price)}${c.new_sale_price ? ` / 할인 ${fmt(c.new_sale_price)}` : ''}${c.new_discount ? `<span class="discount-badge">-${c.new_discount}%</span>` : ''}</div>`;
+        } else if (c.type === 'removed') {
+          detail = `<div class="change-detail">정가 ${fmt(c.old_price)}${c.old_sale_price ? ` / 할인 ${fmt(c.old_sale_price)}` : ''}</div>`;
+        } else if (c.type === 'changed') {
+          detail = c.changes.map(ch => {
+            const labels = { price: '정가', sale_price: '할인가', discount_rate: '할인율', rack: '랙 위치' };
+            const oldV = ch.field === 'discount_rate' ? (ch.old ? ch.old + '%' : '-') : (ch.field === 'rack' ? ch.old + '번' : fmt(ch.old));
+            const newV = ch.field === 'discount_rate' ? (ch.new ? ch.new + '%' : '-') : (ch.field === 'rack' ? ch.new + '번' : fmt(ch.new));
+            return `<div class="change-detail">${labels[ch.field]}: <span>${oldV}</span><span class="arrow">→</span><strong>${newV}</strong></div>`;
+          }).join('');
+        }
+
+        div.innerHTML = `
+          <span class="change-badge">${badges[c.type]}</span>
+          <div class="change-info">
+            <div class="change-sku">${c.sku}<span class="rack-tag">RACK ${c.rack}</span></div>
+            ${c.name ? `<div class="change-name">${c.name}</div>` : ''}
+            ${detail}
+          </div>`;
+        changeList.appendChild(div);
+      });
+    }
+  } else {
+    document.getElementById('diff-block').style.display = 'none';
+  }
+
+  // RACKS
+  const rackData = document.getElementById('rack-data');
+  rackData.innerHTML = '';
+
+  if (!data.racks.length) {
+    rackData.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>인식된 랙이 없습니다</p></div>';
+    return;
+  }
+
+  data.racks.forEach(rack => {
+    const block = document.createElement('div');
+    block.className = 'rack-block';
+
+    const rows = rack.products.map((p, i) => `
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">${p.position || i+1}</td>
+        <td><span class="sku-text">${p.sku || '-'}</span></td>
+        <td>${p.name || '-'}</td>
+        <td>
+          ${p.sale_price
+            ? `<span class="price-text sale-price">${fmt(p.sale_price)}</span>
+               <span class="orig-price">${fmt(p.price)}</span>
+               ${p.discount_rate ? `<span class="discount-badge">-${p.discount_rate}%</span>` : ''}`
+            : `<span class="price-text">${fmt(p.price)}</span>`
+          }
+        </td>
+      </tr>`).join('');
+
+    block.innerHTML = `
+      <div class="rack-header">
+        <span class="rack-num">RACK ${rack.rack_number}</span>
+        <span class="rack-count">${rack.products.length}개 제품</span>
+      </div>
+      <table class="rack-table">
+        <thead>
+          <tr>
+            <th>#</th><th>품번</th><th>제품명</th><th>가격</th>
+          </tr>
+        </thead>
+        <tbody>${rows || '<tr><td colspan="4" style="color:var(--muted);padding:16px;text-align:center">인식된 제품 없음</td></tr>'}</tbody>
+      </table>`;
+    rackData.appendChild(block);
+  });
+
+  section.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── HISTORY ──
+async function loadHistory() {
+  try {
+    const res = await fetch(`/api/sessions?store=${selectedStore}`);
+    const data = await res.json();
+    renderHistory(data);
+  } catch {}
+}
+
+function renderHistory(sessions) {
+  const list = document.getElementById('history-list');
+  if (!sessions.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>스캔 기록 없음</p></div>';
+    return;
+  }
+  list.innerHTML = sessions.slice(0, 20).map(s => `
+    <div class="history-item" onclick="loadSession(${s.id})">
+      <div>
+        <span class="history-store">${STORE_LABELS[s.store] || s.store}</span>
+        <div style="font-size:14px;margin-top:6px;font-weight:500">${s.scanned_at}</div>
+        <div class="history-meta">랙 ${s.rack_count}개 · 제품 ${s.product_count}개</div>
+      </div>
+      <button class="btn-load-history">불러오기</button>
+    </div>`).join('');
+}
+
+async function loadSession(id) {
+  try {
+    const res = await fetch(`/api/sessions/${id}`);
+    const data = await res.json();
+    renderResults({ store: data.store, racks: data.racks, diff: { has_previous: false } });
+    showToast('📋 세션 불러오기 완료', 'success');
+  } catch (e) {
+    showToast('❌ 불러오기 실패', 'error');
+  }
+}
+
+// ── UTILS ──
+function fmt(n) {
+  if (!n && n !== 0) return '-';
+  return Number(n).toLocaleString('ko-KR') + '원';
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──
+loadHistory();
+</script>
+</body>
+</html>

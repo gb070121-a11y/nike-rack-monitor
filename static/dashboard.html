@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RACK MONITOR — 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #ff4d00;
+    --accent2: #ff8c42;
+    --green: #39d353;
+    --red: #f85149;
+    --yellow: #e3b341;
+    --blue: #58a6ff;
+    --text: #e8e8e8;
+    --muted: #666;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Noto Sans KR', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding-bottom: 60px; }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: var(--font-display); font-size: 24px; letter-spacing: 4px; }
+  .logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-link {
+    padding: 7px 16px; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--font-body);
+    font-size: 13px; cursor: pointer; text-decoration: none;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .nav-link:hover, .nav-link.active { border-color: var(--accent); color: var(--accent); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  /* STORE SELECTOR */
+  .store-bar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .store-label { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; color: var(--muted); }
+  .store-tabs { display: flex; gap: 6px; }
+  .store-tab {
+    padding: 8px 20px; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--font-body);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .store-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+  .session-selector {
+    margin-left: auto; display: flex; align-items: center; gap: 8px;
+  }
+  .session-selector label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+  .session-select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  @media(max-width:700px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 16px; position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.total::before { background: var(--accent); }
+  .kpi-card.racks::before { background: var(--blue); }
+  .kpi-card.discounted::before { background: var(--yellow); }
+  .kpi-card.changes::before { background: var(--green); }
+
+  .kpi-value { font-family: var(--font-display); font-size: 38px; line-height: 1; margin-bottom: 4px; }
+  .kpi-card.total .kpi-value { color: var(--accent); }
+  .kpi-card.racks .kpi-value { color: var(--blue); }
+  .kpi-card.discounted .kpi-value { color: var(--yellow); }
+  .kpi-card.changes .kpi-value { color: var(--green); }
+  .kpi-label { font-size: 12px; color: var(--muted); }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--font-mono); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: var(--font-display); font-size: 20px; letter-spacing: 3px;
+    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); font-weight: 400; letter-spacing: 1px; }
+
+  /* CHANGE ALERT STRIP */
+  .change-strip {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 28px; overflow: hidden;
+  }
+  .change-strip-header {
+    padding: 14px 18px; background: var(--surface2);
+    display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border);
+  }
+  .change-strip-title { font-family: var(--font-display); font-size: 17px; letter-spacing: 2px; }
+  .change-pill {
+    font-size: 11px; font-family: var(--font-mono); font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .pill-added { background: rgba(57,211,83,0.15); color: var(--green); }
+  .pill-removed { background: rgba(248,81,73,0.15); color: var(--red); }
+  .pill-changed { background: rgba(227,179,65,0.15); color: var(--yellow); }
+
+  .change-scroll { max-height: 280px; overflow-y: auto; }
+  .change-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 18px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .change-row:last-child { border-bottom: none; }
+  .change-row:hover { background: rgba(255,255,255,0.02); }
+  .change-type-badge {
+    font-size: 10px; font-family: var(--font-mono); font-weight: 700;
+    padding: 3px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; min-width: 40px; text-align: center;
+  }
+  .badge-added { background: rgba(57,211,83,0.15); color: var(--green); }
+  .badge-removed { background: rgba(248,81,73,0.15); color: var(--red); }
+  .badge-changed { background: rgba(227,179,65,0.15); color: var(--yellow); }
+
+  .change-row-sku { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); min-width: 130px; }
+  .change-row-rack { font-size: 11px; color: var(--muted); font-family: var(--font-mono); min-width: 60px; }
+  .change-row-detail { font-size: 12px; color: var(--text); flex: 1; }
+  .arrow { color: var(--accent); margin: 0 5px; }
+  .no-changes {
+    padding: 32px; text-align: center; color: var(--muted); font-size: 13px;
+  }
+
+  /* RACK GRID */
+  .rack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  @media(max-width:500px) { .rack-grid { grid-template-columns: 1fr; } }
+
+  .rack-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; transition: border-color 0.2s;
+  }
+  .rack-card:hover { border-color: #444; }
+  .rack-card-header {
+    padding: 12px 16px; background: var(--surface2);
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .rack-card-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; color: var(--accent); }
+  .rack-card-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .rack-toggle { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .rack-toggle.open { transform: rotate(180deg); }
+
+  .rack-product-list { display: none; }
+  .rack-product-list.open { display: block; }
+
+  .product-row {
+    display: grid; grid-template-columns: 28px 1fr auto;
+    gap: 8px; align-items: center;
+    padding: 9px 16px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .product-row:last-child { border-bottom: none; }
+  .product-row:hover { background: rgba(255,255,255,0.02); }
+  .product-pos { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .product-info {}
+  .product-sku { font-family: var(--font-mono); font-size: 12px; color: var(--accent2); }
+  .product-name { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .product-price { text-align: right; }
+  .price-sale { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--red); }
+  .price-orig { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-decoration: line-through; }
+  .price-normal { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+  .disc-badge {
+    display: inline-block; background: rgba(248,81,73,0.18); color: var(--red);
+    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
+    padding: 1px 5px; border-radius: 3px; margin-left: 4px;
+  }
+
+  /* SEARCH BAR */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 11px 16px 11px 40px;
+    color: var(--text); font-family: var(--font-body); font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+
+  /* LOADING */
+  .loading {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .loading-spinner {
+    width: 32px; height: 32px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 48px; color: var(--muted); }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* EXPORT BTN */
+  .btn-export {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 16px; border-radius: 4px;
+    font-family: var(--font-body); font-size: 13px; cursor: pointer;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* HIGHLIGHT */
+  .highlight { background: rgba(255,77,0,0.2); border-radius: 2px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 22px; font-size: 14px;
+    transition: transform 0.3s; z-index: 999; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RACK<span>.</span>MONITOR</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">📸 스캔</a>
+    <a href="/dashboard" class="nav-link active">📊 대시보드</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STORE + SESSION -->
+  <div class="store-bar">
+    <span class="store-label">STORE</span>
+    <div class="store-tabs">
+      <button class="store-tab active" onclick="selectStore('gimhae', this)">김해</button>
+      <button class="store-tab" onclick="selectStore('jeonggwan', this)">정관</button>
+    </div>
+    <div class="session-selector">
+      <label>스캔 회차</label>
+      <select class="session-select" id="session-select" onchange="loadSession(this.value)">
+        <option value="">최신 스캔</option>
+      </select>
+    </div>
+    <button class="btn-export" onclick="exportCSV()">⬇ CSV 내보내기</button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card total">
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-label">전체 제품 수</div>
+      <div class="kpi-sub" id="kpi-date">—</div>
+    </div>
+    <div class="kpi-card racks">
+      <div class="kpi-value" id="kpi-racks">—</div>
+      <div class="kpi-label">진열 랙 수</div>
+      <div class="kpi-sub" id="kpi-store-label">—</div>
+    </div>
+    <div class="kpi-card discounted">
+      <div class="kpi-value" id="kpi-discounted">—</div>
+      <div class="kpi-label">할인 적용 제품</div>
+      <div class="kpi-sub" id="kpi-avg-discount">—</div>
+    </div>
+    <div class="kpi-card changes">
+      <div class="kpi-value" id="kpi-changes">—</div>
+      <div class="kpi-label">변동 항목</div>
+      <div class="kpi-sub" id="kpi-changes-sub">이전 스캔 대비</div>
+    </div>
+  </div>
+
+  <!-- CHANGE STRIP -->
+  <div class="change-strip" id="change-strip" style="display:none">
+    <div class="change-strip-header">
+      <span class="change-strip-title">변동 내역</span>
+      <span class="change-pill pill-added" id="pill-added">+0</span>
+      <span class="change-pill pill-removed" id="pill-removed">-0</span>
+      <span class="change-pill pill-changed" id="pill-changed">~0</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:auto;font-family:var(--font-mono)" id="compare-label"></span>
+    </div>
+    <div class="change-scroll" id="change-scroll"></div>
+  </div>
+
+  <!-- RACK SEARCH + LIST -->
+  <div class="section-title">
+    랙별 현황
+    <span class="section-sub" id="rack-count-label"></span>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input" placeholder="품번 또는 제품명 검색..." oninput="filterProducts(this.value)">
+  </div>
+
+  <div id="rack-grid" class="rack-grid">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div>데이터 불러오는 중...</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+let currentStore = 'gimhae';
+let currentData = null;
+let currentDiff = null;
+const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
+
+// ── INIT ──
+selectStore('gimhae', document.querySelector('.store-tab.active'));
+
+function selectStore(store, el) {
+  currentStore = store;
+  document.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  loadSessions();
+}
+
+// ── SESSIONS ──
+async function loadSessions() {
+  try {
+    const res = await fetch(`/api/sessions?store=${currentStore}`);
+    const sessions = await res.json();
+    const sel = document.getElementById('session-select');
+    sel.innerHTML = '<option value="">최신 스캔</option>';
+    sessions.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.scanned_at} (랙${s.rack_count}/제품${s.product_count})`;
+      sel.appendChild(opt);
+    });
+    if (sessions.length) loadSession(sessions[0].id);
+    else showEmpty();
+  } catch { showEmpty(); }
+}
+
+async function loadSession(sessionId) {
+  if (!sessionId) { loadSessions(); return; }
+  showLoading();
+  try {
+    const [detailRes, compareRes] = await Promise.all([
+      fetch(`/api/sessions/${sessionId}`),
+      fetch(`/api/compare-latest/${sessionId}`)
+    ]);
+    currentData = await detailRes.json();
+    currentDiff = await compareRes.json();
+    renderDashboard();
+  } catch(e) {
+    showToast('데이터 로드 실패');
+  }
+}
+
+// ── RENDER ──
+function renderDashboard() {
+  if (!currentData) return;
+
+  const allProducts = currentData.racks.flatMap(r => r.products);
+  const discounted = allProducts.filter(p => p.sale_price || p.discount_rate);
+  const avgDisc = discounted.length
+    ? Math.round(discounted.filter(p=>p.discount_rate).reduce((a,p)=>a+p.discount_rate,0) / (discounted.filter(p=>p.discount_rate).length||1))
+    : 0;
+
+  // KPI
+  document.getElementById('kpi-total').textContent = allProducts.length;
+  document.getElementById('kpi-racks').textContent = currentData.racks.length;
+  document.getElementById('kpi-discounted').textContent = discounted.length;
+  document.getElementById('kpi-date').textContent = currentData.scanned_at;
+  document.getElementById('kpi-store-label').textContent = STORE_LABELS[currentData.store] + ' 매장';
+  document.getElementById('kpi-avg-discount').textContent = avgDisc ? `평균 ${avgDisc}% 할인` : '할인 없음';
+
+  // DIFF
+  if (currentDiff && currentDiff.has_previous) {
+    const s = currentDiff.summary;
+    const total = s.added + s.removed + s.changed;
+    document.getElementById('kpi-changes').textContent = total;
+    document.getElementById('kpi-changes-sub').textContent = `+${s.added} -${s.removed} ~${s.changed}`;
+
+    document.getElementById('change-strip').style.display = 'block';
+    document.getElementById('pill-added').textContent = `+${s.added} 추가`;
+    document.getElementById('pill-removed').textContent = `-${s.removed} 제거`;
+    document.getElementById('pill-changed').textContent = `~${s.changed} 변동`;
+    document.getElementById('compare-label').textContent = `비교: ${currentDiff.compared_with_date || ''}`;
+
+    renderChanges(currentDiff.changes);
+  } else {
+    document.getElementById('kpi-changes').textContent = '—';
+    document.getElementById('kpi-changes-sub').textContent = '이전 스캔 없음';
+    document.getElementById('change-strip').style.display = 'none';
+  }
+
+  document.getElementById('rack-count-label').textContent =
+    `${currentData.racks.length}개 랙 · ${allProducts.length}개 제품`;
+
+  renderRacks(currentData.racks);
+}
+
+function renderChanges(changes) {
+  const scroll = document.getElementById('change-scroll');
+  if (!changes.length) {
+    scroll.innerHTML = '<div class="no-changes">✅ 변동 없음 — 이전 스캔과 동일합니다</div>';
+    return;
+  }
+
+  scroll.innerHTML = changes.map(c => {
+    const badges = { added: ['badge-added','신규'], removed: ['badge-removed','제거'], changed: ['badge-changed','변동'] };
+    const [cls, label] = badges[c.type];
+    let detail = '';
+
+    if (c.type === 'added') {
+      detail = `정가 ${fmt(c.new_price)}${c.new_sale_price ? ` → 할인 <strong>${fmt(c.new_sale_price)}</strong>` : ''}${c.new_discount ? ` <span style="color:var(--red)">-${c.new_discount}%</span>` : ''}`;
+    } else if (c.type === 'removed') {
+      detail = `정가 ${fmt(c.old_price)} 제거됨`;
+    } else {
+      detail = c.changes.map(ch => {
+        const fl = { price:'정가', sale_price:'할인가', discount_rate:'할인율', rack:'랙위치' };
+        const ov = ch.field==='discount_rate' ? (ch.old||0)+'%' : ch.field==='rack' ? ch.old+'번' : fmt(ch.old);
+        const nv = ch.field==='discount_rate' ? (ch.new||0)+'%' : ch.field==='rack' ? ch.new+'번' : fmt(ch.new);
+        return `${fl[ch.field]}: <span style="color:var(--muted)">${ov}</span><span class="arrow">→</span><strong>${nv}</strong>`;
+      }).join(' &nbsp;|&nbsp; ');
+    }
+
+    return `<div class="change-row">
+      <span class="change-type-badge ${cls}">${label}</span>
+      <span class="change-row-sku">${c.sku}</span>
+      <span class="change-row-rack">RACK ${c.rack}</span>
+      <span class="change-row-detail">${detail}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderRacks(racks, searchTerm = '') {
+  const grid = document.getElementById('rack-grid');
+  if (!racks.length) { showEmpty(); return; }
+
+  grid.innerHTML = racks.map(rack => {
+    let products = rack.products;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      products = products.filter(p =>
+        (p.sku||'').toLowerCase().includes(q) ||
+        (p.name||'').toLowerCase().includes(q)
+      );
+    }
+    if (searchTerm && !products.length) return '';
+
+    const discCount = products.filter(p => p.sale_price || p.discount_rate).length;
+
+    const rows = products.map((p, i) => {
+      const skuHl = searchTerm ? highlight(p.sku||'', searchTerm) : (p.sku||'-');
+      const nameHl = searchTerm ? highlight(p.name||'', searchTerm) : (p.name||'');
+      return `<div class="product-row">
+        <span class="product-pos">${p.position||i+1}</span>
+        <div class="product-info">
+          <div class="product-sku">${skuHl}</div>
+          ${nameHl ? `<div class="product-name">${nameHl}</div>` : ''}
+        </div>
+        <div class="product-price">
+          ${p.sale_price
+            ? `<div class="price-sale">${fmt(p.sale_price)}${p.discount_rate?`<span class="disc-badge">-${p.discount_rate}%</span>`:''}</div>
+               <div class="price-orig">${fmt(p.price)}</div>`
+            : `<div class="price-normal">${fmt(p.price)}</div>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="rack-card">
+      <div class="rack-card-header" onclick="toggleRack(this)">
+        <div>
+          <div class="rack-card-title">RACK ${rack.rack_number}</div>
+          <div class="rack-card-meta">${products.length}개 제품${discCount ? ` · 할인 ${discCount}개` : ''}</div>
+        </div>
+        <span class="rack-toggle open">▲</span>
+      </div>
+      <div class="rack-product-list open">${rows || '<div style="padding:16px;color:var(--muted);font-size:13px;text-align:center">검색 결과 없음</div>'}</div>
+    </div>`;
+  }).join('');
+
+  if (!grid.innerHTML.trim()) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>검색 결과가 없습니다</p></div>';
+  }
+}
+
+function toggleRack(header) {
+  const list = header.nextElementSibling;
+  const toggle = header.querySelector('.rack-toggle');
+  list.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+function filterProducts(q) {
+  if (!currentData) return;
+  renderRacks(currentData.racks, q);
+}
+
+// ── EXPORT CSV ──
+function exportCSV() {
+  if (!currentData) return;
+  const rows = [['랙번호','품번','제품명','정가','할인가','할인율']];
+  currentData.racks.forEach(r => {
+    r.products.forEach(p => {
+      rows.push([r.rack_number, p.sku||'', p.name||'', p.price||'', p.sale_price||'', p.discount_rate ? p.discount_rate+'%' : '']);
+    });
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${STORE_LABELS[currentStore]}_랙현황_${currentData.scanned_at.replace(/[: ]/g,'-')}.csv`;
+  a.click();
+  showToast('✅ CSV 저장 완료');
+}
+
+// ── UTILS ──
+function fmt(n) {
+  if (!n && n !== 0) return '-';
+  return Number(n).toLocaleString('ko-KR') + '원';
+}
+function highlight(text, term) {
+  if (!term) return text;
+  const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<span class="highlight">$1</span>');
+}
+function showLoading() {
+  document.getElementById('rack-grid').innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>불러오는 중...</div></div>';
+}
+function showEmpty() {
+  document.getElementById('rack-grid').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>스캔 데이터가 없습니다<br><a href="/" style="color:var(--accent)">스캔 시작하기 →</a></p></div>';
+  document.getElementById('kpi-total').textContent = '0';
+  document.getElementById('kpi-racks').textContent = '0';
+  document.getElementById('kpi-discounted').textContent = '0';
+  document.getElementById('kpi-changes').textContent = '0';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
