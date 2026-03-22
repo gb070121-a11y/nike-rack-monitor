@@ -3,7 +3,11 @@ import base64
 import json
 import os
 import re
+import logging
 from openai import AsyncOpenAI
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
 
@@ -67,10 +71,12 @@ def is_black_image(b64_data: str) -> bool:
 
 async def analyze_single_image(image: dict, semaphore: asyncio.Semaphore) -> dict:
     if is_black_image(image["b64"]):
+        logger.info(f"Black image detected: {image['filename']}")
         return {"filename": image["filename"], "is_black": True, "products": []}
 
     async with semaphore:
         try:
+            logger.info(f"Analyzing: {image['filename']}")
             response = await client.chat.completions.create(
                 model="gpt-4o",
                 max_tokens=1500,
@@ -89,17 +95,22 @@ async def analyze_single_image(image: dict, semaphore: asyncio.Semaphore) -> dic
                 }]
             )
             raw = response.choices[0].message.content.strip()
+            logger.info(f"GPT response for {image['filename']}: {raw[:200]}")
             raw = re.sub(r"```json|```", "", raw).strip()
             result = json.loads(raw)
             result["filename"] = image["filename"]
+            logger.info(f"Parsed {len(result.get('products',[]))} products from {image['filename']}")
             return result
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error for {image['filename']}: {e}")
             return {"filename": image["filename"], "is_black": False, "products": [], "error": "JSON 파싱 실패"}
         except Exception as e:
+            logger.error(f"Error analyzing {image['filename']}: {str(e)}")
             return {"filename": image["filename"], "is_black": False, "products": [], "error": str(e)}
 
 
 async def analyze_images_batch(images: list, start_rack_num: int = 1, single_rack: bool = False) -> list:
+    logger.info(f"Starting batch analysis: {len(images)} images, start_rack={start_rack_num}")
     semaphore = asyncio.Semaphore(10)
     tasks = [analyze_single_image(img, semaphore) for img in images]
     results = await asyncio.gather(*tasks)
@@ -112,7 +123,7 @@ async def analyze_images_batch(images: list, start_rack_num: int = 1, single_rac
     for res in results:
         if res.get("is_black"):
             if single_rack:
-                continue  # 랙별 모드에서는 암전 무시
+                continue
             if current_rack_products:
                 racks.append({
                     "rack_number": current_rack_num,
@@ -136,4 +147,5 @@ async def analyze_images_batch(images: list, start_rack_num: int = 1, single_rac
             "photo_count": photo_count
         })
 
+    logger.info(f"Batch complete: {len(racks)} racks, {sum(len(r['products']) for r in racks)} products")
     return racks
