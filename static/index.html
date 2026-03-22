@@ -237,20 +237,20 @@ function selectMode(mode, el) {
   document.getElementById('result-mini').classList.remove('show');
 
   if (mode === 'all') {
-    document.getElementById('btn-all').style.display = selectedFiles.length ? 'block' : 'none';
+    document.getElementById('btn-all').style.display = selectedFiles.length ? 'flex' : 'none';
     document.getElementById('upload-title').textContent = '한번에 업로드';
     document.getElementById('upload-sub').innerHTML = '전체 사진 한 번에 선택<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자';
   } else if (mode === 'append') {
     document.getElementById('btn-start').style.display = 'block';
     if (currentSessionId) {
       document.getElementById('session-status').classList.add('show');
-      document.getElementById('btn-append').style.display = selectedFiles.length ? 'block' : 'none';
+      document.getElementById('btn-append').style.display = selectedFiles.length ? 'flex' : 'none';
     }
     document.getElementById('upload-title').textContent = '이어서 업로드';
     document.getElementById('upload-sub').innerHTML = '50장씩 나눠서 올리세요<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자';
   } else if (mode === 'rack') {
     document.getElementById('rack-input-wrap').classList.add('show');
-    document.getElementById('btn-rack').style.display = selectedFiles.length ? 'block' : 'none';
+    document.getElementById('btn-rack').style.display = selectedFiles.length ? 'flex' : 'none';
 
     // 랙별 모드는 기존 세션 선택 필요
     if (!currentSessionId) {
@@ -303,9 +303,9 @@ function handleFiles(files) {
   });
 
   // 모드별 버튼 표시
-  if (selectedMode === 'all') document.getElementById('btn-all').style.display = 'block';
-  else if (selectedMode === 'append' && currentSessionId) document.getElementById('btn-append').style.display = 'block';
-  else if (selectedMode === 'rack') document.getElementById('btn-rack').style.display = 'block';
+  if (selectedMode === 'all') document.getElementById('btn-all').style.display = 'flex';
+  else if (selectedMode === 'append' && currentSessionId) document.getElementById('btn-append').style.display = 'flex';
+  else if (selectedMode === 'rack') document.getElementById('btn-rack').style.display = 'flex';
 }
 
 // 드래그앤드롭
