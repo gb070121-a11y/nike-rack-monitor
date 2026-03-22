@@ -119,20 +119,26 @@ async def analyze_images_batch(images: list, start_rack_num: int = 1, single_rac
     current_rack_num = start_rack_num
     current_rack_products = []
     photo_count = 0
+    rack_started = False  # 첫 암전 사진 후부터 랙 카운트 시작
 
     for res in results:
         if res.get("is_black"):
             if single_rack:
                 continue
-            if current_rack_products:
+            if rack_started and current_rack_products:
                 racks.append({
                     "rack_number": current_rack_num,
                     "products": current_rack_products,
                     "photo_count": photo_count
                 })
-            current_rack_num += 1
-            current_rack_products = []
-            photo_count = 0
+                current_rack_num += 1
+                current_rack_products = []
+                photo_count = 0
+            elif rack_started:
+                current_rack_num += 1
+                current_rack_products = []
+                photo_count = 0
+            rack_started = True
         else:
             photo_count += 1
             products = res.get("products", [])
