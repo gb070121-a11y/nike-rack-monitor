@@ -55,42 +55,17 @@ Rules:
 
 
 def is_black_image(b64_data: str) -> bool:
-    """
-    base64 이미지를 픽셀 밝기로 직접 판별
-    평균 밝기가 30 미만이면 암전 사진으로 판단
-    """
     try:
-        import struct
-        import zlib
-
         img_bytes = base64.b64decode(b64_data)
-
-        # JPEG 또는 PNG 간단 밝기 체크 — 앞부분 샘플링
-        # 이미지 크기에 관계없이 빠르게 처리하기 위해
-        # 파일 크기 대비 어두운 정도를 추정
-        # JPEG의 경우 어두운 이미지는 파일 크기가 매우 작음
-        # 하지만 SSBC 워터마크가 있어 단순 크기로는 불가
-
-        # Pillow 없이 간단히: 이미지 바이트 전체의 평균값
-        # JPEG 바이너리에서 실제 픽셀값과 직접 관계는 없지만
-        # 완전히 어두운 JPEG는 대부분의 바이트가 낮은 값
-        # 대신 파일명이나 크기 기반 휴리스틱 사용
-
-        # 가장 확실한 방법: 파일 크기로 판별
-        # 암전 사진은 보통 100KB 미만 (일반 사진은 500KB~3MB)
         file_size = len(img_bytes)
-        if file_size < 300000:  # 150KB 미만이면 암전으로 판단
+        if file_size < 300000:
             return True
         return False
-
     except Exception:
         return False
 
 
 async def analyze_single_image(image: dict, semaphore: asyncio.Semaphore) -> dict:
-    """단일 이미지 분석 — 암전은 API 호출 없이 즉시 처리"""
-
-    # 암전 사진은 GPT-4o에 보내지 않고 직접 판별
     if is_black_image(image["b64"]):
         return {"filename": image["filename"], "is_black": True, "products": []}
 
@@ -109,43 +84,35 @@ async def analyze_single_image(image: dict, semaphore: asyncio.Semaphore) -> dic
                                 "detail": "high"
                             }
                         },
-                        {
-                            "type": "text",
-                            "text": SYSTEM_PROMPT
-                        }
+                        {"type": "text", "text": SYSTEM_PROMPT}
                     ]
                 }]
             )
-
             raw = response.choices[0].message.content.strip()
             raw = re.sub(r"```json|```", "", raw).strip()
             result = json.loads(raw)
             result["filename"] = image["filename"]
             return result
-
         except json.JSONDecodeError:
             return {"filename": image["filename"], "is_black": False, "products": [], "error": "JSON 파싱 실패"}
         except Exception as e:
             return {"filename": image["filename"], "is_black": False, "products": [], "error": str(e)}
 
 
-async def analyze_images_batch(images: list) -> list:
-    """
-    이미지 목록을 병렬 분석하고 암전 사진 기준으로 랙별 그룹화
-    """
+async def analyze_images_batch(images: list, start_rack_num: int = 1, single_rack: bool = False) -> list:
     semaphore = asyncio.Semaphore(10)
-
     tasks = [analyze_single_image(img, semaphore) for img in images]
     results = await asyncio.gather(*tasks)
 
     racks = []
-    current_rack_num = 1
+    current_rack_num = start_rack_num
     current_rack_products = []
     photo_count = 0
 
     for res in results:
         if res.get("is_black"):
-            # 암전 사진 = 랙 구분자 — 제품이 없어도 랙 번호 증가
+            if single_rack:
+                continue  # 랙별 모드에서는 암전 무시
             if current_rack_products:
                 racks.append({
                     "rack_number": current_rack_num,
@@ -162,7 +129,6 @@ async def analyze_images_batch(images: list) -> list:
                 p["photo_file"] = res.get("filename", "")
             current_rack_products.extend(products)
 
-    # 마지막 랙 처리
     if current_rack_products:
         racks.append({
             "rack_number": current_rack_num,
