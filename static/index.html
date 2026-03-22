@@ -28,72 +28,73 @@
   .container { max-width: 700px; margin: 0 auto; padding: 24px 16px; }
 
   /* MODE SELECTOR */
-  .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
-  .mode-card { background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .mode-card { background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
   .mode-card:hover { border-color: #444; }
   .mode-card.active { border-color: var(--accent); background: rgba(255,77,0,0.06); }
-  .mode-icon { font-size: 28px; margin-bottom: 8px; }
-  .mode-title { font-family: var(--font-display); font-size: 15px; letter-spacing: 2px; margin-bottom: 4px; }
+  .mode-icon { font-size: 26px; margin-bottom: 6px; }
+  .mode-title { font-family: var(--font-display); font-size: 14px; letter-spacing: 2px; margin-bottom: 3px; }
   .mode-card.active .mode-title { color: var(--accent); }
-  .mode-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .mode-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
-  /* SESSION STATUS */
-  .session-status { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; display: none; }
-  .session-status.show { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  .session-info { font-family: var(--font-mono); font-size: 12px; }
-  .session-id-badge { background: var(--accent); color: #fff; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-family: var(--font-mono); font-weight: 700; }
-  .session-stats { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  /* MODE INFO BAR */
+  .mode-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .mode-info strong { color: var(--text); }
 
-  /* RACK NUMBER INPUT (랙별 모드) */
-  .rack-input-wrap { display: none; margin-bottom: 16px; }
-  .rack-input-wrap.show { display: block; }
-  .rack-input-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-  .rack-number-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 6px; font-family: var(--font-mono); font-size: 16px; width: 120px; outline: none; text-align: center; }
+  /* 이어서 세션 상태 */
+  .session-bar { background: var(--surface); border: 1px solid var(--green); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: none; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .session-bar.show { display: flex; }
+  .session-badge { background: var(--green); color: #000; font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 3px; }
+  .session-stats { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .btn-finish { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 8px 14px; border-radius: 6px; font-family: var(--font-body); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .btn-finish:hover { background: var(--green); color: #000; }
+
+  /* 랙 번호 입력 */
+  .rack-input-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: none; align-items: center; gap: 12px; }
+  .rack-input-bar.show { display: flex; }
+  .rack-input-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .rack-number-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 18px; font-weight: 700; width: 80px; outline: none; text-align: center; }
   .rack-number-input:focus { border-color: var(--accent); }
 
   /* UPLOAD ZONE */
   .upload-zone { background: var(--surface); border: 2px dashed var(--border); border-radius: 12px; padding: 28px 20px; text-align: center; cursor: pointer; position: relative; transition: all 0.3s; }
   .upload-zone.drag-over { border-color: var(--accent); background: rgba(255,77,0,0.05); }
+  .upload-zone.has-files { border-style: solid; border-color: var(--accent); }
   .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
   .upload-icon { font-size: 40px; margin-bottom: 10px; display: block; }
   .upload-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 3px; margin-bottom: 6px; }
   .upload-sub { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
   /* PREVIEW */
-  .preview-section { display: none; margin-top: 16px; }
-  .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .preview-title { font-family: var(--font-display); font-size: 16px; letter-spacing: 2px; }
+  .preview-section { display: none; margin-top: 14px; }
+  .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .preview-title { font-family: var(--font-display); font-size: 15px; letter-spacing: 2px; }
   .preview-count { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; max-height: 180px; overflow-y: auto; }
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; max-height: 160px; overflow-y: auto; }
   .preview-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
   .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .preview-thumb.black-frame { background: #000; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 9px; font-family: var(--font-mono); }
 
-  /* BUTTONS */
-  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-  .btn { padding: 14px 20px; border-radius: 8px; border: none; font-family: var(--font-display); font-size: 17px; letter-spacing: 3px; cursor: pointer; transition: all 0.2s; flex: 1; min-width: 120px; display: none; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: #ff6520; }
-  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-  .btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  .btn-green { background: var(--green); color: #000; }
-  .btn-green:hover:not(:disabled) { opacity: 0.85; }
+  /* 분석 버튼 — 항상 같은 모양 */
+  .btn-analyze { width: 100%; margin-top: 16px; padding: 18px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--font-display); font-size: 22px; letter-spacing: 4px; cursor: pointer; transition: all 0.2s; display: none; align-items: center; justify-content: center; gap: 8px; }
+  .btn-analyze:hover:not(:disabled) { background: #ff6520; transform: translateY(-1px); }
+  .btn-analyze:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+  .btn-analyze.show { display: flex; }
 
   /* PROGRESS */
-  .progress-section { display: none; margin-top: 20px; }
+  .progress-section { display: none; margin-top: 16px; }
   .progress-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; margin: 10px 0; }
   .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.4s ease; border-radius: 4px; }
   .progress-text { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 
-  /* RESULT MINI */
-  .result-mini { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
-  .result-mini.show { display: block; }
-  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  /* RESULT */
+  .result-box { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .result-box.show { display: block; }
+  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .result-row:last-child { border-bottom: none; }
   .result-label { color: var(--muted); }
   .result-val { font-family: var(--font-mono); font-weight: 700; }
-  .diff-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .diff-pills { display: flex; gap: 6px; flex-wrap: wrap; }
   .diff-pill { font-size: 11px; font-family: var(--font-mono); font-weight: 700; padding: 3px 10px; border-radius: 20px; }
   .pill-g { background: rgba(57,211,83,0.15); color: var(--green); }
   .pill-r { background: rgba(248,81,73,0.15); color: var(--red); }
@@ -101,7 +102,7 @@
 
   /* BOTTOM NAV */
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
-  .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; text-decoration: none; color: var(--muted); font-size: 11px; font-family: var(--font-body); transition: color 0.2s; gap: 3px; }
+  .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; text-decoration: none; color: var(--muted); font-size: 11px; transition: color 0.2s; gap: 3px; }
   .bottom-nav a.active { color: var(--accent); }
   .nav-icon { font-size: 20px; }
 
@@ -133,42 +134,45 @@
     <div class="mode-card" onclick="selectMode('append', this)">
       <div class="mode-icon">➕</div>
       <div class="mode-title">이어서</div>
-      <div class="mode-desc">50장씩 나눠서<br>같은 세션에 추가</div>
+      <div class="mode-desc">나눠서<br>같은 세션에 추가</div>
     </div>
     <div class="mode-card" onclick="selectMode('rack', this)">
       <div class="mode-icon">🔢</div>
       <div class="mode-title">랙별</div>
-      <div class="mode-desc">특정 랙 번호만<br>선택해서 교체</div>
+      <div class="mode-desc">특정 랙만<br>선택해서 교체</div>
     </div>
   </div>
 
-  <!-- 이어서 모드 세션 상태 -->
-  <div class="session-status" id="session-status">
-    <div class="session-info">
+  <!-- 모드 안내 -->
+  <div class="mode-info" id="mode-info">
+    전체 사진을 한 번에 업로드합니다. 검은 암전 사진이 랙 구분자입니다.
+  </div>
+
+  <!-- 이어서 모드: 세션 상태 -->
+  <div class="session-bar" id="session-bar">
+    <div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:var(--muted)">진행중 세션</span>
-        <span class="session-id-badge" id="session-id-badge">#0</span>
+        <span class="session-badge" id="session-badge">#0</span>
       </div>
       <div class="session-stats" id="session-stats">랙 0개 · 제품 0개</div>
     </div>
-    <button class="btn btn-green" id="btn-finish" style="display:inline-flex;font-size:14px;padding:10px 16px;flex:0" onclick="finishSession()">✅ 스캔 완료</button>
+    <button class="btn-finish" onclick="finishSession()">✅ 스캔 완료</button>
   </div>
 
-  <!-- 랙별 모드 랙 번호 입력 -->
-  <div class="rack-input-wrap" id="rack-input-wrap">
-    <div class="rack-input-label">교체할 랙 번호 입력:</div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <input type="number" class="rack-number-input" id="rack-number-input" value="1" min="1" max="99">
-      <span style="font-size:13px;color:var(--muted)">번 랙을 업로드합니다</span>
-    </div>
+  <!-- 랙별 모드: 랙 번호 입력 -->
+  <div class="rack-input-bar" id="rack-input-bar">
+    <span class="rack-input-label">교체할 랙 번호:</span>
+    <input type="number" class="rack-number-input" id="rack-number-input" value="1" min="1" max="99">
+    <span style="font-size:13px;color:var(--muted)">번 랙</span>
   </div>
 
   <!-- 업로드 존 -->
   <div class="upload-zone" id="upload-zone">
     <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
     <span class="upload-icon">📸</span>
-    <div class="upload-title" id="upload-title">UPLOAD</div>
-    <div class="upload-sub" id="upload-sub">사진을 선택하거나 드래그하세요<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자</div>
+    <div class="upload-title">사진 업로드</div>
+    <div class="upload-sub">사진을 선택하거나 드래그하세요<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자</div>
   </div>
 
   <!-- 미리보기 -->
@@ -180,27 +184,19 @@
     <div class="preview-grid" id="preview-grid"></div>
   </div>
 
-  <!-- 버튼 -->
-  <div class="btn-row">
-    <!-- 한번에 모드 -->
-    <button class="btn btn-primary" id="btn-all" onclick="submitAll()">🔍 분석 시작</button>
+  <!-- 분석 버튼 — 모든 모드 동일 -->
+  <button class="btn-analyze" id="btn-analyze" onclick="submitScan()">
+    🔍 AI 분석 시작
+  </button>
 
-    <!-- 이어서 모드 -->
-    <button class="btn btn-secondary" id="btn-start" onclick="startSession()">▶ 새 스캔 시작</button>
-    <button class="btn btn-primary" id="btn-append" onclick="submitAppend()">➕ 이어서 추가</button>
-
-    <!-- 랙별 모드 -->
-    <button class="btn btn-primary" id="btn-rack" onclick="submitRack()">🔢 랙 업로드</button>
-  </div>
-
-  <!-- 진행 표시 -->
+  <!-- 진행 -->
   <div class="progress-section" id="progress-section">
     <div class="progress-text" id="progress-text">분석 중...</div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
   </div>
 
-  <!-- 결과 요약 -->
-  <div class="result-mini" id="result-mini"></div>
+  <!-- 결과 -->
+  <div class="result-box" id="result-box"></div>
 
 </div>
 
@@ -218,6 +214,11 @@ let selectedFiles = [];
 let currentSessionId = null;
 
 const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
+const MODE_INFO = {
+  all: '전체 사진을 한 번에 업로드합니다. 검은 암전 사진이 랙 구분자입니다.',
+  append: '나눠서 올려도 같은 세션에 이어서 누적됩니다.<br><strong>처음 올릴 때 자동으로 세션이 시작</strong>되고, 다 올리면 <strong>스캔 완료</strong>를 누르세요.',
+  rack: '교체할 랙 번호를 입력하고 해당 랙 사진만 올리세요.<br><strong>이어서 모드에서 세션을 먼저 시작</strong>한 후 사용하세요.'
+};
 
 function selectStore(store, el) {
   selectedStore = store;
@@ -229,35 +230,20 @@ function selectMode(mode, el) {
   selectedMode = mode;
   document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  document.getElementById('mode-info').innerHTML = MODE_INFO[mode];
+  document.getElementById('rack-input-bar').className = 'rack-input-bar' + (mode === 'rack' ? ' show' : '');
+  updateSessionBar();
+  resetFiles();
+}
 
-  // 버튼 표시 초기화
-  ['btn-all','btn-start','btn-append','btn-rack'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('session-status').classList.remove('show');
-  document.getElementById('rack-input-wrap').classList.remove('show');
-  document.getElementById('result-mini').classList.remove('show');
-
-  if (mode === 'all') {
-    document.getElementById('btn-all').style.display = selectedFiles.length ? 'flex' : 'none';
-    document.getElementById('upload-title').textContent = '한번에 업로드';
-    document.getElementById('upload-sub').innerHTML = '전체 사진 한 번에 선택<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자';
-  } else if (mode === 'append') {
-    document.getElementById('btn-start').style.display = 'block';
-    if (currentSessionId) {
-      document.getElementById('session-status').classList.add('show');
-      document.getElementById('btn-append').style.display = selectedFiles.length ? 'flex' : 'none';
-    }
-    document.getElementById('upload-title').textContent = '이어서 업로드';
-    document.getElementById('upload-sub').innerHTML = '50장씩 나눠서 올리세요<br><span style="color:var(--accent)">검은 암전 사진</span>이 랙 구분자';
-  } else if (mode === 'rack') {
-    document.getElementById('rack-input-wrap').classList.add('show');
-    document.getElementById('btn-rack').style.display = selectedFiles.length ? 'flex' : 'none';
-
-    // 랙별 모드는 기존 세션 선택 필요
-    if (!currentSessionId) {
-      showToast('💡 먼저 "이어서" 모드로 스캔을 시작하거나 기존 세션을 선택하세요', '');
-    }
-    document.getElementById('upload-title').textContent = '랙별 업로드';
-    document.getElementById('upload-sub').innerHTML = '교체할 랙 번호를 입력하고<br>해당 랙 사진만 업로드하세요';
+function updateSessionBar() {
+  const bar = document.getElementById('session-bar');
+  if (selectedMode === 'append' && currentSessionId) {
+    bar.classList.add('show');
+  } else if (selectedMode === 'rack' && currentSessionId) {
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
   }
 }
 
@@ -266,12 +252,12 @@ function handleFiles(files) {
   selectedFiles = Array.from(files);
   if (!selectedFiles.length) return;
 
-  const preview = document.getElementById('preview-section');
-  const grid = document.getElementById('preview-grid');
-  preview.style.display = 'block';
+  document.getElementById('preview-section').style.display = 'block';
   document.getElementById('preview-count').textContent = selectedFiles.length + '장';
-  grid.innerHTML = '';
+  document.getElementById('upload-zone').classList.add('has-files');
 
+  const grid = document.getElementById('preview-grid');
+  grid.innerHTML = '';
   selectedFiles.forEach(file => {
     const div = document.createElement('div');
     div.className = 'preview-thumb';
@@ -285,10 +271,9 @@ function handleFiles(files) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, 16, 16);
         const data = ctx.getImageData(0, 0, 16, 16).data;
-        let brightness = 0;
-        for (let i = 0; i < data.length; i += 4) brightness += (data[i]+data[i+1]+data[i+2])/3;
-        brightness /= (data.length/4);
-        if (brightness < 30) {
+        let b = 0;
+        for (let i = 0; i < data.length; i += 4) b += (data[i]+data[i+1]+data[i+2])/3;
+        if (b/(data.length/4) < 30) {
           div.classList.add('black-frame');
           div.textContent = '■ 구분';
         } else {
@@ -302,10 +287,8 @@ function handleFiles(files) {
     grid.appendChild(div);
   });
 
-  // 모드별 버튼 표시
-  if (selectedMode === 'all') document.getElementById('btn-all').style.display = 'flex';
-  else if (selectedMode === 'append' && currentSessionId) document.getElementById('btn-append').style.display = 'flex';
-  else if (selectedMode === 'rack') document.getElementById('btn-rack').style.display = 'flex';
+  // 분석 버튼 표시
+  document.getElementById('btn-analyze').classList.add('show');
 }
 
 // 드래그앤드롭
@@ -314,80 +297,59 @@ zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add(
 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
 zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
 
-// ── 진행 표시 ──
-let fakeTimer = null;
-function startProgress(total) {
-  const prog = document.getElementById('progress-section');
-  const bar = document.getElementById('progress-bar');
-  const text = document.getElementById('progress-text');
-  prog.style.display = 'block';
-  let fake = 0;
-  fakeTimer = setInterval(() => {
-    fake = Math.min(fake + Math.random() * 6, 88);
-    bar.style.width = fake + '%';
-    text.textContent = `${Math.floor(fake/100*total)}/${total}장 분석 중...`;
-  }, 600);
-}
-function stopProgress() {
-  if (fakeTimer) clearInterval(fakeTimer);
-  document.getElementById('progress-bar').style.width = '100%';
-  document.getElementById('progress-text').textContent = '✅ 완료!';
-  setTimeout(() => { document.getElementById('progress-section').style.display = 'none'; }, 800);
-}
+// ── 통합 분석 버튼 ──
+async function submitScan() {
+  if (!selectedFiles.length) return;
 
-function buildForm() {
-  const form = new FormData();
-  form.append('store', selectedStore);
-  selectedFiles.forEach(f => form.append('files', f));
-  return form;
+  if (selectedMode === 'all') {
+    await submitAll();
+  } else if (selectedMode === 'append') {
+    // 세션 없으면 자동 시작
+    if (!currentSessionId) await startSession();
+    await submitAppend();
+  } else if (selectedMode === 'rack') {
+    if (!currentSessionId) {
+      showToast('💡 이어서 모드에서 먼저 사진을 올려 세션을 시작하세요', '');
+      return;
+    }
+    await submitRack();
+  }
 }
 
 // ── 모드 1: 한번에 ──
 async function submitAll() {
-  if (!selectedFiles.length) return;
-  setLoading(true);
   startProgress(selectedFiles.length);
+  setLoading(true);
   try {
-    const res = await fetch('/api/scan', { method: 'POST', body: buildForm() });
+    const form = new FormData();
+    form.append('store', selectedStore);
+    selectedFiles.forEach(f => form.append('files', f));
+    const res = await fetch('/api/scan', { method: 'POST', body: form });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     stopProgress();
-    showResult({
-      racks: data.racks.length,
-      products: data.racks.reduce((a,r)=>a+r.products.length,0),
-      diff: data.diff,
-      label: '한번에 스캔 완료'
-    });
+    showResult({ racks: data.racks.length, products: data.racks.reduce((a,r)=>a+r.products.length,0), diff: data.diff, label: '한번에 스캔 완료' });
     resetFiles();
-  } catch(e) {
-    stopProgress();
-    showToast('❌ ' + e.message, 'error');
-  }
+  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
   setLoading(false);
 }
 
-// ── 모드 2: 이어서 - 세션 시작 ──
+// ── 모드 2: 세션 자동 시작 ──
 async function startSession() {
   const form = new FormData();
   form.append('store', selectedStore);
-  try {
-    const res = await fetch('/api/scan/start', { method: 'POST', body: form });
-    const data = await res.json();
-    currentSessionId = data.session_id;
-    updateSessionStatus(0, 0);
-    document.getElementById('session-status').classList.add('show');
-    document.getElementById('btn-start').style.display = 'none';
-    showToast('✅ 세션 시작! 이제 사진을 올리세요', 'success');
-  } catch(e) {
-    showToast('❌ 세션 시작 실패', 'error');
-  }
+  const res = await fetch('/api/scan/start', { method: 'POST', body: form });
+  const data = await res.json();
+  currentSessionId = data.session_id;
+  document.getElementById('session-badge').textContent = '#' + currentSessionId;
+  document.getElementById('session-stats').textContent = '랙 0개 · 제품 0개';
+  document.getElementById('session-bar').classList.add('show');
 }
 
 // ── 모드 2: 이어서 추가 ──
 async function submitAppend() {
-  if (!selectedFiles.length || !currentSessionId) return;
-  setLoading(true);
   startProgress(selectedFiles.length);
+  setLoading(true);
   try {
     const form = new FormData();
     selectedFiles.forEach(f => form.append('files', f));
@@ -395,13 +357,10 @@ async function submitAppend() {
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     stopProgress();
-    updateSessionStatus(data.total_racks, data.total_products);
+    document.getElementById('session-stats').textContent = `랙 ${data.total_racks}개 · 제품 ${data.total_products}개`;
     showToast(`✅ RACK ${data.added_racks}개 추가 — 누적 ${data.total_racks}개 랙`, 'success');
     resetFiles();
-  } catch(e) {
-    stopProgress();
-    showToast('❌ ' + e.message, 'error');
-  }
+  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
   setLoading(false);
 }
 
@@ -411,32 +370,19 @@ async function finishSession() {
   try {
     const res = await fetch(`/api/scan/finish/${currentSessionId}`, { method: 'POST' });
     const data = await res.json();
-    showResult({
-      racks: data.total_racks,
-      products: data.total_products,
-      diff: data.diff,
-      label: '이어서 스캔 완료'
-    });
+    showResult({ racks: data.total_racks, products: data.total_products, diff: data.diff, label: '이어서 스캔 완료' });
     currentSessionId = null;
-    document.getElementById('session-status').classList.remove('show');
-    document.getElementById('btn-start').style.display = 'block';
-  } catch(e) {
-    showToast('❌ 완료 처리 실패', 'error');
-  }
+    document.getElementById('session-bar').classList.remove('show');
+    showToast('✅ 스캔 완료!', 'success');
+  } catch(e) { showToast('❌ 완료 처리 실패', 'error'); }
 }
 
-// ── 모드 3: 랙별 업로드 ──
+// ── 모드 3: 랙별 ──
 async function submitRack() {
-  if (!selectedFiles.length) return;
-  if (!currentSessionId) {
-    showToast('💡 먼저 "이어서" 모드에서 세션을 시작하세요', '');
-    return;
-  }
   const rackNum = parseInt(document.getElementById('rack-number-input').value);
   if (!rackNum || rackNum < 1) { showToast('랙 번호를 입력하세요', 'error'); return; }
-
-  setLoading(true);
   startProgress(selectedFiles.length);
+  setLoading(true);
   try {
     const form = new FormData();
     form.append('rack_number', rackNum);
@@ -445,26 +391,35 @@ async function submitRack() {
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     stopProgress();
+    document.getElementById('session-stats').textContent = `제품 ${data.total_products}개`;
     showToast(`✅ RACK ${rackNum} 교체 완료 — ${data.products_count}개 제품`, 'success');
-    updateSessionStatus(null, data.total_products);
+    // 다음 랙 번호 자동 증가
+    document.getElementById('rack-number-input').value = rackNum + 1;
     resetFiles();
-  } catch(e) {
-    stopProgress();
-    showToast('❌ ' + e.message, 'error');
-  }
+  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
   setLoading(false);
 }
 
-// ── UI 헬퍼 ──
-function updateSessionStatus(racks, products) {
-  document.getElementById('session-id-badge').textContent = '#' + currentSessionId;
-  const stats = document.getElementById('session-stats');
-  if (racks !== null) stats.textContent = `랙 ${racks}개 · 제품 ${products}개`;
-  else stats.textContent = stats.textContent.replace(/제품 \d+개/, `제품 ${products}개`);
+// ── 헬퍼 ──
+let fakeTimer = null;
+function startProgress(total) {
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('result-box').classList.remove('show');
+  let fake = 0;
+  fakeTimer = setInterval(() => {
+    fake = Math.min(fake + Math.random() * 6, 88);
+    document.getElementById('progress-bar').style.width = fake + '%';
+    document.getElementById('progress-text').textContent = `${Math.floor(fake/100*total)}/${total}장 분석 중...`;
+  }, 600);
 }
-
+function stopProgress() {
+  if (fakeTimer) clearInterval(fakeTimer);
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('progress-text').textContent = '✅ 완료!';
+  setTimeout(() => { document.getElementById('progress-section').style.display = 'none'; }, 800);
+}
 function showResult({ racks, products, diff, label }) {
-  const box = document.getElementById('result-mini');
+  const box = document.getElementById('result-box');
   let diffHtml = '';
   if (diff && diff.has_previous) {
     const s = diff.summary;
@@ -480,37 +435,25 @@ function showResult({ racks, products, diff, label }) {
     <div class="result-row"><span class="result-label">랙 수</span><span class="result-val">${racks}개</span></div>
     <div class="result-row"><span class="result-label">제품 수</span><span class="result-val">${products}개</span></div>
     ${diffHtml}
-    <div style="margin-top:12px">
-      <a href="/dashboard" style="color:var(--accent);font-size:13px;text-decoration:none">📊 대시보드에서 확인하기 →</a>
-    </div>`;
+    <div style="margin-top:12px"><a href="/dashboard" style="color:var(--accent);font-size:13px;text-decoration:none">📊 대시보드 확인하기 →</a></div>`;
   box.classList.add('show');
 }
-
 function resetFiles() {
   selectedFiles = [];
   document.getElementById('preview-section').style.display = 'none';
   document.getElementById('file-input').value = '';
-  ['btn-all','btn-append','btn-rack'].forEach(id => {
-    if (id !== 'btn-start') document.getElementById(id).style.display = 'none';
-  });
+  document.getElementById('upload-zone').classList.remove('has-files');
+  document.getElementById('btn-analyze').classList.remove('show');
 }
-
 function setLoading(on) {
-  ['btn-all','btn-append','btn-rack','btn-start'].forEach(id => {
-    const btn = document.getElementById(id);
-    btn.disabled = on;
-  });
+  document.getElementById('btn-analyze').disabled = on;
 }
-
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = type;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// 초기화
-selectMode('all', document.querySelector('.mode-card.active'));
 </script>
 </body>
 </html>
