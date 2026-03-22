@@ -31,7 +31,7 @@
     color: var(--text);
     font-family: var(--font-body);
     min-height: 100vh;
-    padding-bottom: 40px;
+    padding-bottom: 80px;
   }
 
   /* ── HEADER ── */
@@ -447,6 +447,24 @@
     .diff-num { font-size: 28px; }
     .rack-table th, .rack-table td { padding: 8px; }
   }
+
+  /* ── BOTTOM NAV (모바일) ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-nav a {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 10px 0; text-decoration: none;
+    color: var(--muted); font-size: 11px; font-family: var(--font-body);
+    transition: color 0.2s; gap: 3px;
+  }
+  .bottom-nav a.active { color: var(--accent); }
+  .bottom-nav a:hover { color: var(--text); }
+  .bottom-nav .nav-icon { font-size: 20px; }
 </style>
 </head>
 <body>
@@ -840,5 +858,16 @@ function showToast(msg, type = '') {
 // ── INIT ──
 loadHistory();
 </script>
+
+<nav class="bottom-nav">
+  <a href="/" class="active">
+    <span class="nav-icon">📸</span>
+    <span>스캔</span>
+  </a>
+  <a href="/dashboard">
+    <span class="nav-icon">📊</span>
+    <span>대시보드</span>
+  </a>
+</nav>
 </body>
 </html>
