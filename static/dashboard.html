@@ -8,18 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0a;
-    --surface: #141414;
-    --surface2: #1e1e1e;
-    --border: #2a2a2a;
-    --accent: #ff4d00;
-    --accent2: #ff8c42;
-    --green: #39d353;
-    --red: #f85149;
-    --yellow: #e3b341;
-    --blue: #58a6ff;
-    --text: #e8e8e8;
-    --muted: #666;
+    --bg: #0a0a0a; --surface: #141414; --surface2: #1e1e1e; --border: #2a2a2a;
+    --accent: #ff4d00; --accent2: #ff8c42; --green: #39d353; --red: #f85149;
+    --yellow: #e3b341; --blue: #58a6ff; --text: #e8e8e8; --muted: #666;
     --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'Noto Sans KR', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
@@ -27,67 +18,32 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding-bottom: 60px; }
 
-  /* HEADER */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 100;
-  }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .logo { font-family: var(--font-display); font-size: 24px; letter-spacing: 4px; }
   .logo span { color: var(--accent); }
   .nav-links { display: flex; gap: 8px; }
-  .nav-link {
-    padding: 7px 16px; border-radius: 4px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted); font-family: var(--font-body);
-    font-size: 13px; cursor: pointer; text-decoration: none;
-    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
-  }
+  .nav-link { padding: 7px 16px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font-body); font-size: 13px; cursor: pointer; text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
   .nav-link:hover, .nav-link.active { border-color: var(--accent); color: var(--accent); }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
 
-  /* STORE SELECTOR */
-  .store-bar {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
-    flex-wrap: wrap;
-  }
+  .store-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
   .store-label { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; color: var(--muted); }
   .store-tabs { display: flex; gap: 6px; }
-  .store-tab {
-    padding: 8px 20px; border-radius: 4px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted); font-family: var(--font-body);
-    font-size: 14px; cursor: pointer; transition: all 0.2s;
-  }
+  .store-tab { padding: 8px 20px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font-body); font-size: 14px; cursor: pointer; transition: all 0.2s; }
   .store-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
-
-  .session-selector {
-    margin-left: auto; display: flex; align-items: center; gap: 8px;
-  }
+  .session-selector { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .session-selector label { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
-  .session-select {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 7px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;
-    cursor: pointer;
-  }
+  .session-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
 
-  /* KPI CARDS */
   .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
   @media(max-width:700px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
-
-  .kpi-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 16px; position: relative; overflow: hidden;
-  }
-  .kpi-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 16px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
   .kpi-card.total::before { background: var(--accent); }
   .kpi-card.racks::before { background: var(--blue); }
   .kpi-card.discounted::before { background: var(--yellow); }
   .kpi-card.changes::before { background: var(--green); }
-
   .kpi-value { font-family: var(--font-display); font-size: 38px; line-height: 1; margin-bottom: 4px; }
   .kpi-card.total .kpi-value { color: var(--accent); }
   .kpi-card.racks .kpi-value { color: var(--blue); }
@@ -96,149 +52,93 @@
   .kpi-label { font-size: 12px; color: var(--muted); }
   .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--font-mono); }
 
-  /* SECTION TITLE */
-  .section-title {
-    font-family: var(--font-display); font-size: 20px; letter-spacing: 3px;
-    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  .section-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 3px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .section-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); font-weight: 400; letter-spacing: 1px; }
 
-  /* CHANGE ALERT STRIP */
-  .change-strip {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 28px; overflow: hidden;
-  }
-  .change-strip-header {
-    padding: 14px 18px; background: var(--surface2);
-    display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border);
-  }
+  /* CHANGE STRIP */
+  .change-strip { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 28px; overflow: hidden; }
+  .change-strip-header { padding: 14px 18px; background: var(--surface2); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .change-strip-title { font-family: var(--font-display); font-size: 17px; letter-spacing: 2px; }
-  .change-pill {
-    font-size: 11px; font-family: var(--font-mono); font-weight: 700;
-    padding: 3px 10px; border-radius: 20px;
-  }
+  .change-pill { font-size: 11px; font-family: var(--font-mono); font-weight: 700; padding: 3px 10px; border-radius: 20px; }
   .pill-added { background: rgba(57,211,83,0.15); color: var(--green); }
   .pill-removed { background: rgba(248,81,73,0.15); color: var(--red); }
   .pill-changed { background: rgba(227,179,65,0.15); color: var(--yellow); }
 
+  /* CSV 다운로드 버튼 그룹 */
+  .export-group { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .btn-export { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; font-family: var(--font-body); font-size: 12px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-export.green:hover { border-color: var(--green); color: var(--green); }
+  .btn-export.red:hover { border-color: var(--red); color: var(--red); }
+
   .change-scroll { max-height: 280px; overflow-y: auto; }
-  .change-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 18px; border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
+  .change-row { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .change-row:last-child { border-bottom: none; }
   .change-row:hover { background: rgba(255,255,255,0.02); }
-  .change-type-badge {
-    font-size: 10px; font-family: var(--font-mono); font-weight: 700;
-    padding: 3px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; min-width: 40px; text-align: center;
-  }
+  .change-type-badge { font-size: 10px; font-family: var(--font-mono); font-weight: 700; padding: 3px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; min-width: 40px; text-align: center; }
   .badge-added { background: rgba(57,211,83,0.15); color: var(--green); }
   .badge-removed { background: rgba(248,81,73,0.15); color: var(--red); }
   .badge-changed { background: rgba(227,179,65,0.15); color: var(--yellow); }
-
   .change-row-sku { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); min-width: 130px; }
   .change-row-rack { font-size: 11px; color: var(--muted); font-family: var(--font-mono); min-width: 60px; }
   .change-row-detail { font-size: 12px; color: var(--text); flex: 1; }
   .arrow { color: var(--accent); margin: 0 5px; }
-  .no-changes {
-    padding: 32px; text-align: center; color: var(--muted); font-size: 13px;
-  }
+  .no-changes { padding: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* SKU 검색 결과 */
+  .sku-result-box { display: none; background: var(--surface); border: 2px solid var(--accent); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+  .sku-result-box.show { display: block; }
+  .sku-result-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .sku-result-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .sku-result-item:last-child { border-bottom: none; }
+  .sku-rack-tag { background: var(--accent); color: #fff; font-family: var(--font-display); font-size: 16px; letter-spacing: 2px; padding: 4px 12px; border-radius: 4px; white-space: nowrap; }
+  .sku-result-info { flex: 1; }
+  .sku-result-sku { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--accent2); }
+  .sku-result-name { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .sku-result-price { text-align: right; font-family: var(--font-mono); font-size: 13px; }
+  .sku-not-found { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 11px 16px 11px 40px; color: var(--text); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
+  .search-hint { font-size: 11px; color: var(--muted); margin-top: -10px; margin-bottom: 14px; font-family: var(--font-mono); }
 
   /* RACK GRID */
   .rack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
   @media(max-width:500px) { .rack-grid { grid-template-columns: 1fr; } }
-
-  .rack-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    overflow: hidden; transition: border-color 0.2s;
-  }
+  .rack-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color 0.2s; }
   .rack-card:hover { border-color: #444; }
-  .rack-card-header {
-    padding: 12px 16px; background: var(--surface2);
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border); cursor: pointer;
-  }
+  .rack-card-header { padding: 12px 16px; background: var(--surface2); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); cursor: pointer; }
   .rack-card-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; color: var(--accent); }
   .rack-card-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
   .rack-toggle { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
   .rack-toggle.open { transform: rotate(180deg); }
-
   .rack-product-list { display: none; }
   .rack-product-list.open { display: block; }
-
-  .product-row {
-    display: grid; grid-template-columns: 28px 1fr auto;
-    gap: 8px; align-items: center;
-    padding: 9px 16px; border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
+  .product-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 9px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .product-row:last-child { border-bottom: none; }
   .product-row:hover { background: rgba(255,255,255,0.02); }
   .product-pos { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
-  .product-info {}
   .product-sku { font-family: var(--font-mono); font-size: 12px; color: var(--accent2); }
   .product-name { font-size: 11px; color: var(--muted); margin-top: 1px; }
   .product-price { text-align: right; }
   .price-sale { font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--red); }
   .price-orig { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-decoration: line-through; }
   .price-normal { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
-  .disc-badge {
-    display: inline-block; background: rgba(248,81,73,0.18); color: var(--red);
-    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
-    padding: 1px 5px; border-radius: 3px; margin-left: 4px;
-  }
+  .disc-badge { display: inline-block; background: rgba(248,81,73,0.18); color: var(--red); font-size: 9px; font-family: var(--font-mono); font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
 
-  /* SEARCH BAR */
-  .search-wrap { position: relative; margin-bottom: 16px; }
-  .search-input {
-    width: 100%; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; padding: 11px 16px 11px 40px;
-    color: var(--text); font-family: var(--font-body); font-size: 14px;
-    outline: none; transition: border-color 0.2s;
-  }
-  .search-input:focus { border-color: var(--accent); }
-  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; }
-
-  /* LOADING */
-  .loading {
-    text-align: center; padding: 60px 20px; color: var(--muted);
-  }
-  .loading-spinner {
-    width: 32px; height: 32px; border: 2px solid var(--border);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
-  }
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* EMPTY */
   .empty { text-align: center; padding: 48px; color: var(--muted); }
   .empty-icon { font-size: 36px; margin-bottom: 12px; }
-
-  /* EXPORT BTN */
-  .btn-export {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); padding: 8px 16px; border-radius: 4px;
-    font-family: var(--font-body); font-size: 13px; cursor: pointer;
-    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* HIGHLIGHT */
   .highlight { background: rgba(255,77,0,0.2); border-radius: 2px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
 
-  /* TOAST */
-  #toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 22px; font-size: 14px;
-    transition: transform 0.3s; z-index: 999; white-space: nowrap;
-  }
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 14px; transition: transform 0.3s; z-index: 999; white-space: nowrap; }
   #toast.show { transform: translateX(-50%) translateY(0); }
-
-  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 </style>
 </head>
 <body>
@@ -253,7 +153,6 @@
 
 <div class="container">
 
-  <!-- STORE + SESSION -->
   <div class="store-bar">
     <span class="store-label">STORE</span>
     <div class="store-tabs">
@@ -266,7 +165,7 @@
         <option value="">최신 스캔</option>
       </select>
     </div>
-    <button class="btn-export" onclick="exportCSV()">⬇ CSV 내보내기</button>
+    <button class="btn-export" onclick="exportCSV('all')">⬇ 전체 CSV</button>
   </div>
 
   <!-- KPI -->
@@ -300,27 +199,38 @@
       <span class="change-pill pill-added" id="pill-added">+0</span>
       <span class="change-pill pill-removed" id="pill-removed">-0</span>
       <span class="change-pill pill-changed" id="pill-changed">~0</span>
-      <span style="font-size:11px;color:var(--muted);margin-left:auto;font-family:var(--font-mono)" id="compare-label"></span>
+      <span style="font-size:11px;color:var(--muted);font-family:var(--font-mono)" id="compare-label"></span>
+      <div class="export-group">
+        <button class="btn-export green" onclick="exportCSV('added')">⬇ 신규 품번</button>
+        <button class="btn-export red" onclick="exportCSV('removed')">⬇ 사라진 품번</button>
+      </div>
     </div>
     <div class="change-scroll" id="change-scroll"></div>
   </div>
 
-  <!-- RACK SEARCH + LIST -->
+  <!-- RACK SEARCH -->
   <div class="section-title">
     랙별 현황
     <span class="section-sub" id="rack-count-label"></span>
   </div>
 
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input type="text" class="search-input" id="search-input" placeholder="품번 또는 제품명 검색..." oninput="filterProducts(this.value)">
+  <!-- SKU 검색 결과 -->
+  <div class="sku-result-box" id="sku-result-box">
+    <div class="sku-result-label">🔍 품번 검색 결과 — 랙 위치</div>
+    <div id="sku-result-content"></div>
   </div>
 
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input"
+      placeholder="품번 검색 (Enter → 랙 위치 표시) / 실시간 필터링"
+      oninput="filterProducts(this.value)"
+      onkeydown="if(event.key==='Enter') searchSKU(this.value)">
+  </div>
+  <div class="search-hint">💡 Enter 키: 품번으로 정확한 랙 위치 검색</div>
+
   <div id="rack-grid" class="rack-grid">
-    <div class="loading">
-      <div class="loading-spinner"></div>
-      <div>데이터 불러오는 중...</div>
-    </div>
+    <div class="loading"><div class="loading-spinner"></div><div>데이터 불러오는 중...</div></div>
   </div>
 
 </div>
@@ -333,7 +243,6 @@ let currentData = null;
 let currentDiff = null;
 const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
 
-// ── INIT ──
 selectStore('gimhae', document.querySelector('.store-tab.active'));
 
 function selectStore(store, el) {
@@ -343,7 +252,6 @@ function selectStore(store, el) {
   loadSessions();
 }
 
-// ── SESSIONS ──
 async function loadSessions() {
   try {
     const res = await fetch(`/api/sessions?store=${currentStore}`);
@@ -364,6 +272,9 @@ async function loadSessions() {
 async function loadSession(sessionId) {
   if (!sessionId) { loadSessions(); return; }
   showLoading();
+  // 검색 초기화
+  document.getElementById('search-input').value = '';
+  document.getElementById('sku-result-box').classList.remove('show');
   try {
     const [detailRes, compareRes] = await Promise.all([
       fetch(`/api/sessions/${sessionId}`),
@@ -372,22 +283,17 @@ async function loadSession(sessionId) {
     currentData = await detailRes.json();
     currentDiff = await compareRes.json();
     renderDashboard();
-  } catch(e) {
-    showToast('데이터 로드 실패');
-  }
+  } catch { showToast('데이터 로드 실패'); }
 }
 
-// ── RENDER ──
 function renderDashboard() {
   if (!currentData) return;
-
   const allProducts = currentData.racks.flatMap(r => r.products);
   const discounted = allProducts.filter(p => p.sale_price || p.discount_rate);
-  const avgDisc = discounted.length
-    ? Math.round(discounted.filter(p=>p.discount_rate).reduce((a,p)=>a+p.discount_rate,0) / (discounted.filter(p=>p.discount_rate).length||1))
+  const avgDisc = discounted.filter(p=>p.discount_rate).length
+    ? Math.round(discounted.filter(p=>p.discount_rate).reduce((a,p)=>a+p.discount_rate,0) / discounted.filter(p=>p.discount_rate).length)
     : 0;
 
-  // KPI
   document.getElementById('kpi-total').textContent = allProducts.length;
   document.getElementById('kpi-racks').textContent = currentData.racks.length;
   document.getElementById('kpi-discounted').textContent = discounted.length;
@@ -395,19 +301,15 @@ function renderDashboard() {
   document.getElementById('kpi-store-label').textContent = STORE_LABELS[currentData.store] + ' 매장';
   document.getElementById('kpi-avg-discount').textContent = avgDisc ? `평균 ${avgDisc}% 할인` : '할인 없음';
 
-  // DIFF
   if (currentDiff && currentDiff.has_previous) {
     const s = currentDiff.summary;
-    const total = s.added + s.removed + s.changed;
-    document.getElementById('kpi-changes').textContent = total;
+    document.getElementById('kpi-changes').textContent = s.added + s.removed + s.changed;
     document.getElementById('kpi-changes-sub').textContent = `+${s.added} -${s.removed} ~${s.changed}`;
-
     document.getElementById('change-strip').style.display = 'block';
-    document.getElementById('pill-added').textContent = `+${s.added} 추가`;
+    document.getElementById('pill-added').textContent = `+${s.added} 신규`;
     document.getElementById('pill-removed').textContent = `-${s.removed} 제거`;
     document.getElementById('pill-changed').textContent = `~${s.changed} 변동`;
     document.getElementById('compare-label').textContent = `비교: ${currentDiff.compared_with_date || ''}`;
-
     renderChanges(currentDiff.changes);
   } else {
     document.getElementById('kpi-changes').textContent = '—';
@@ -417,24 +319,21 @@ function renderDashboard() {
 
   document.getElementById('rack-count-label').textContent =
     `${currentData.racks.length}개 랙 · ${allProducts.length}개 제품`;
-
   renderRacks(currentData.racks);
 }
 
 function renderChanges(changes) {
   const scroll = document.getElementById('change-scroll');
   if (!changes.length) {
-    scroll.innerHTML = '<div class="no-changes">✅ 변동 없음 — 이전 스캔과 동일합니다</div>';
+    scroll.innerHTML = '<div class="no-changes">✅ 변동 없음</div>';
     return;
   }
-
   scroll.innerHTML = changes.map(c => {
     const badges = { added: ['badge-added','신규'], removed: ['badge-removed','제거'], changed: ['badge-changed','변동'] };
     const [cls, label] = badges[c.type];
     let detail = '';
-
     if (c.type === 'added') {
-      detail = `정가 ${fmt(c.new_price)}${c.new_sale_price ? ` → 할인 <strong>${fmt(c.new_sale_price)}</strong>` : ''}${c.new_discount ? ` <span style="color:var(--red)">-${c.new_discount}%</span>` : ''}`;
+      detail = `정가 ${fmt(c.new_price)}${c.new_sale_price ? ` → <strong>${fmt(c.new_sale_price)}</strong>` : ''}${c.new_discount ? ` <span style="color:var(--red)">-${c.new_discount}%</span>` : ''}`;
     } else if (c.type === 'removed') {
       detail = `정가 ${fmt(c.old_price)} 제거됨`;
     } else {
@@ -443,9 +342,8 @@ function renderChanges(changes) {
         const ov = ch.field==='discount_rate' ? (ch.old||0)+'%' : ch.field==='rack' ? ch.old+'번' : fmt(ch.old);
         const nv = ch.field==='discount_rate' ? (ch.new||0)+'%' : ch.field==='rack' ? ch.new+'번' : fmt(ch.new);
         return `${fl[ch.field]}: <span style="color:var(--muted)">${ov}</span><span class="arrow">→</span><strong>${nv}</strong>`;
-      }).join(' &nbsp;|&nbsp; ');
+      }).join(' | ');
     }
-
     return `<div class="change-row">
       <span class="change-type-badge ${cls}">${label}</span>
       <span class="change-row-sku">${c.sku}</span>
@@ -455,42 +353,72 @@ function renderChanges(changes) {
   }).join('');
 }
 
+// ── 품번 랙 위치 검색 (Enter) ──
+function searchSKU(q) {
+  if (!q.trim() || !currentData) return;
+  const term = q.trim().toLowerCase();
+  const resultBox = document.getElementById('sku-result-box');
+  const resultContent = document.getElementById('sku-result-content');
+
+  const found = [];
+  currentData.racks.forEach(rack => {
+    rack.products.forEach(p => {
+      if ((p.sku||'').toLowerCase().includes(term) || (p.name||'').toLowerCase().includes(term)) {
+        found.push({ rack: rack.rack_number, product: p });
+      }
+    });
+  });
+
+  resultBox.classList.add('show');
+
+  if (!found.length) {
+    resultContent.innerHTML = `<div class="sku-not-found">❌ "${q}" — 현재 스캔에서 찾을 수 없습니다</div>`;
+    return;
+  }
+
+  resultContent.innerHTML = found.map(f => `
+    <div class="sku-result-item">
+      <span class="sku-rack-tag">RACK ${f.rack}</span>
+      <div class="sku-result-info">
+        <div class="sku-result-sku">${f.product.sku || '-'}</div>
+        ${f.product.name ? `<div class="sku-result-name">${f.product.name}</div>` : ''}
+      </div>
+      <div class="sku-result-price">
+        ${f.product.sale_price
+          ? `<div style="color:var(--red);font-weight:700">${fmt(f.product.sale_price)}</div>
+             <div style="color:var(--muted);font-size:10px;text-decoration:line-through">${fmt(f.product.price)}</div>`
+          : `<div style="font-weight:700">${fmt(f.product.price)}</div>`}
+      </div>
+    </div>`).join('');
+}
+
 function renderRacks(racks, searchTerm = '') {
   const grid = document.getElementById('rack-grid');
   if (!racks.length) { showEmpty(); return; }
-
-  grid.innerHTML = racks.map(rack => {
+  const html = racks.map(rack => {
     let products = rack.products;
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      products = products.filter(p =>
-        (p.sku||'').toLowerCase().includes(q) ||
-        (p.name||'').toLowerCase().includes(q)
-      );
+      products = products.filter(p => (p.sku||'').toLowerCase().includes(q) || (p.name||'').toLowerCase().includes(q));
     }
     if (searchTerm && !products.length) return '';
-
     const discCount = products.filter(p => p.sale_price || p.discount_rate).length;
-
     const rows = products.map((p, i) => {
       const skuHl = searchTerm ? highlight(p.sku||'', searchTerm) : (p.sku||'-');
       const nameHl = searchTerm ? highlight(p.name||'', searchTerm) : (p.name||'');
       return `<div class="product-row">
         <span class="product-pos">${p.position||i+1}</span>
-        <div class="product-info">
+        <div>
           <div class="product-sku">${skuHl}</div>
           ${nameHl ? `<div class="product-name">${nameHl}</div>` : ''}
         </div>
         <div class="product-price">
           ${p.sale_price
-            ? `<div class="price-sale">${fmt(p.sale_price)}${p.discount_rate?`<span class="disc-badge">-${p.discount_rate}%</span>`:''}</div>
-               <div class="price-orig">${fmt(p.price)}</div>`
-            : `<div class="price-normal">${fmt(p.price)}</div>`
-          }
+            ? `<div class="price-sale">${fmt(p.sale_price)}${p.discount_rate?`<span class="disc-badge">-${p.discount_rate}%</span>`:''}</div><div class="price-orig">${fmt(p.price)}</div>`
+            : `<div class="price-normal">${fmt(p.price)}</div>`}
         </div>
       </div>`;
     }).join('');
-
     return `<div class="rack-card">
       <div class="rack-card-header" onclick="toggleRack(this)">
         <div>
@@ -502,10 +430,7 @@ function renderRacks(racks, searchTerm = '') {
       <div class="rack-product-list open">${rows || '<div style="padding:16px;color:var(--muted);font-size:13px;text-align:center">검색 결과 없음</div>'}</div>
     </div>`;
   }).join('');
-
-  if (!grid.innerHTML.trim()) {
-    grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>검색 결과가 없습니다</p></div>';
-  }
+  grid.innerHTML = html || '<div class="empty"><div class="empty-icon">🔍</div><p>검색 결과 없음</p></div>';
 }
 
 function toggleRack(header) {
@@ -517,34 +442,62 @@ function toggleRack(header) {
 
 function filterProducts(q) {
   if (!currentData) return;
+  if (!q.trim()) document.getElementById('sku-result-box').classList.remove('show');
   renderRacks(currentData.racks, q);
 }
 
-// ── EXPORT CSV ──
-function exportCSV() {
+// ── CSV 내보내기 (전체 / 신규 / 삭제) ──
+function exportCSV(type) {
   if (!currentData) return;
-  const rows = [['랙번호','품번','제품명','정가','할인가','할인율']];
-  currentData.racks.forEach(r => {
-    r.products.forEach(p => {
-      rows.push([r.rack_number, p.sku||'', p.name||'', p.price||'', p.sale_price||'', p.discount_rate ? p.discount_rate+'%' : '']);
+
+  let rows = [];
+  let filename = '';
+
+  if (type === 'all') {
+    rows = [['랙번호','품번','제품명','정가','할인가','할인율']];
+    currentData.racks.forEach(r => {
+      r.products.forEach(p => {
+        rows.push([r.rack_number, p.sku||'', p.name||'', p.price||'', p.sale_price||'', p.discount_rate ? p.discount_rate+'%' : '']);
+      });
     });
-  });
+    filename = `${STORE_LABELS[currentStore]}_전체현황_${currentData.scanned_at.replace(/[: ]/g,'-')}.csv`;
+
+  } else if (type === 'added') {
+    if (!currentDiff || !currentDiff.has_previous) { showToast('이전 스캔 데이터가 없습니다'); return; }
+    const added = currentDiff.changes.filter(c => c.type === 'added');
+    if (!added.length) { showToast('신규 추가 품번이 없습니다'); return; }
+    rows = [['랙번호','품번','제품명','정가','할인가','할인율']];
+    added.forEach(c => {
+      rows.push([c.rack, c.sku, c.name||'', c.new_price||'', c.new_sale_price||'', c.new_discount ? c.new_discount+'%' : '']);
+    });
+    filename = `${STORE_LABELS[currentStore]}_신규품번_${currentData.scanned_at.replace(/[: ]/g,'-')}.csv`;
+
+  } else if (type === 'removed') {
+    if (!currentDiff || !currentDiff.has_previous) { showToast('이전 스캔 데이터가 없습니다'); return; }
+    const removed = currentDiff.changes.filter(c => c.type === 'removed');
+    if (!removed.length) { showToast('사라진 품번이 없습니다'); return; }
+    rows = [['랙번호','품번','제품명','이전정가','이전할인가','이전할인율']];
+    removed.forEach(c => {
+      rows.push([c.rack, c.sku, c.name||'', c.old_price||'', c.old_sale_price||'', c.old_discount ? c.old_discount+'%' : '']);
+    });
+    filename = `${STORE_LABELS[currentStore]}_사라진품번_${currentData.scanned_at.replace(/[: ]/g,'-')}.csv`;
+  }
+
   const csv = rows.map(r => r.join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${STORE_LABELS[currentStore]}_랙현황_${currentData.scanned_at.replace(/[: ]/g,'-')}.csv`;
+  a.download = filename;
   a.click();
   showToast('✅ CSV 저장 완료');
 }
 
-// ── UTILS ──
 function fmt(n) {
   if (!n && n !== 0) return '-';
   return Number(n).toLocaleString('ko-KR') + '원';
 }
 function highlight(text, term) {
-  if (!term) return text;
+  if (!term || !text) return text||'';
   const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
   return text.replace(re, '<span class="highlight">$1</span>');
 }
@@ -553,10 +506,6 @@ function showLoading() {
 }
 function showEmpty() {
   document.getElementById('rack-grid').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>스캔 데이터가 없습니다<br><a href="/" style="color:var(--accent)">스캔 시작하기 →</a></p></div>';
-  document.getElementById('kpi-total').textContent = '0';
-  document.getElementById('kpi-racks').textContent = '0';
-  document.getElementById('kpi-discounted').textContent = '0';
-  document.getElementById('kpi-changes').textContent = '0';
 }
 function showToast(msg) {
   const t = document.getElementById('toast');
