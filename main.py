@@ -300,9 +300,9 @@ async def download_excel(session_id: int, type: str = "all"):
     wb.save(buf)
     buf.seek(0)
 
-    filename = f"{store_name}_랙현황_{detail['scanned_at'][:10]}.xlsx"
+    filename = f"rack_{detail['store']}_{detail['scanned_at'][:10]}.xlsx"
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
