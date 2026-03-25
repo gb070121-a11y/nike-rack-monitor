@@ -168,3 +168,95 @@ async def compare_latest(session_id: int):
     if not detail:
         raise HTTPException(status_code=404, detail="세션 없음")
     return compare_sessions(detail["store"], session_id)
+
+
+# ── 랙 구분 UI용: 한번에 + 랙맵 ──
+@app.post("/api/scan/with-racks")
+async def upload_scan_with_racks(
+    store: str = Form(...),
+    files: List[UploadFile] = File(...),
+    rack_map: List[int] = Form(...)
+):
+    if not files:
+        raise HTTPException(status_code=400, detail="파일이 없습니다")
+
+    images = await read_images(files)
+
+    # rack_map으로 랙별 그룹화
+    rack_dict = {}
+    for img, rack_num in zip(images, rack_map):
+        if rack_num not in rack_dict:
+            rack_dict[rack_num] = []
+        rack_dict[rack_num].append(img)
+
+    # 각 랙별로 병렬 분석
+    all_racks = []
+    for rack_num in sorted(rack_dict.keys()):
+        rack_images = rack_dict[rack_num]
+        racks = await analyze_images_batch(rack_images, start_rack_num=rack_num, single_rack=True)
+        products = []
+        for r in racks:
+            products.extend(r["products"])
+        all_racks.append({
+            "rack_number": rack_num,
+            "products": products,
+            "photo_count": len(rack_images)
+        })
+
+    session_id = save_scan_session(store, all_racks)
+    diff = compare_sessions(store, session_id)
+    detail = get_session_detail(session_id)
+
+    return JSONResponse({
+        "session_id": session_id,
+        "store": store,
+        "rack_count": len(all_racks),
+        "product_count": sum(len(r["products"]) for r in all_racks),
+        "diff": diff
+    })
+
+
+# ── 랙 구분 UI용: 이어서 + 랙맵 ──
+@app.post("/api/scan/append-with-racks/{session_id}")
+async def append_scan_with_racks(
+    session_id: int,
+    files: List[UploadFile] = File(...),
+    rack_map: List[int] = Form(...)
+):
+    detail = get_session_detail(session_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="세션 없음")
+
+    images = await read_images(files)
+    existing_rack_count = len(detail["racks"])
+
+    # rack_map으로 그룹화 + 기존 랙 번호 오프셋
+    rack_dict = {}
+    for img, rack_num in zip(images, rack_map):
+        actual_rack = rack_num + existing_rack_count
+        if actual_rack not in rack_dict:
+            rack_dict[actual_rack] = []
+        rack_dict[actual_rack].append(img)
+
+    all_racks = []
+    for rack_num in sorted(rack_dict.keys()):
+        rack_images = rack_dict[rack_num]
+        racks = await analyze_images_batch(rack_images, start_rack_num=rack_num, single_rack=True)
+        products = []
+        for r in racks:
+            products.extend(r["products"])
+        all_racks.append({
+            "rack_number": rack_num,
+            "products": products,
+            "photo_count": len(rack_images)
+        })
+
+    append_scan_to_session(session_id, all_racks)
+    updated = get_session_detail(session_id)
+
+    return JSONResponse({
+        "session_id": session_id,
+        "added_racks": len(all_racks),
+        "total_racks": len(updated["racks"]),
+        "total_products": sum(len(r["products"]) for r in updated["racks"]),
+    })
