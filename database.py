@@ -226,3 +226,32 @@ def compare_sessions(store: str, new_session_id: int, old_session_id: int = None
         },
         "changes": changes
     }
+
+
+def finish_session(session_id: int):
+    db = get_client()
+    db.table("sessions").update({"status": "complete"}).eq("id", session_id).execute()
+    _update_session_stats(db, session_id)
+
+
+def delete_session(session_id: int):
+    db = get_client()
+    db.table("sessions").delete().eq("id", session_id).execute()
+
+
+def delete_products(product_ids: list):
+    db = get_client()
+    db.table("products").delete().in_("id", product_ids).execute()
+
+
+def move_products_to_rack(product_ids: list, target_rack: int, session_id: int):
+    db = get_client()
+    # 타겟 랙이 없으면 생성
+    existing = db.table("racks").select("id").eq("session_id", session_id).eq("rack_number", target_rack).execute().data
+    if not existing:
+        db.table("racks").insert({"session_id": session_id, "rack_number": target_rack, "photo_count": 0}).execute()
+        rack_id = db.table("racks").select("id").eq("session_id", session_id).eq("rack_number", target_rack).execute().data[0]["id"]
+    else:
+        rack_id = existing[0]["id"]
+
+    db.table("products").update({"rack_number": target_rack, "rack_id": rack_id}).in_("id", product_ids).execute()

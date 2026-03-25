@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RACK MONITOR — 관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;
+    --accent:#ff4d00;--green:#39d353;--red:#f85149;--yellow:#e3b341;--blue:#58a6ff;
+    --text:#e8e8e8;--muted:#666;
+    --font-display:'Bebas Neue',sans-serif;
+    --font-body:'Noto Sans KR',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;padding-bottom:80px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--font-display);font-size:24px;letter-spacing:4px;}
+  .logo span{color:var(--accent);}
+  .nav-links{display:flex;gap:8px;}
+  .nav-link{padding:7px 16px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+  .nav-link:hover,.nav-link.active{border-color:var(--accent);color:var(--accent);}
+  .container{max-width:1000px;margin:0 auto;padding:24px 16px;}
+  .section-title{font-family:var(--font-display);font-size:20px;letter-spacing:3px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+
+  /* STORE TABS */
+  .store-tabs{display:flex;gap:6px;margin-bottom:20px;}
+  .store-tab{padding:8px 20px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:14px;cursor:pointer;transition:all 0.2s;}
+  .store-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+
+  /* SESSION LIST */
+  .session-list{display:flex;flex-direction:column;gap:8px;margin-bottom:32px;}
+  .session-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;cursor:pointer;transition:border-color 0.2s;}
+  .session-item:hover{border-color:#444;}
+  .session-item.selected{border-color:var(--accent);}
+  .session-meta{flex:1;}
+  .session-date{font-size:14px;font-weight:500;margin-bottom:3px;}
+  .session-stats{font-size:12px;color:var(--muted);font-family:var(--font-mono);}
+  .session-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn-sm{padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:var(--font-body);font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-sm.danger:hover{border-color:var(--red);color:var(--red);}
+  .btn-sm.success{border-color:var(--green);color:var(--green);}
+  .btn-sm.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  /* PRODUCT TABLE */
+  .product-section{display:none;}
+  .product-section.show{display:block;}
+  .product-toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+  .selected-count{font-size:13px;color:var(--muted);font-family:var(--font-mono);}
+  .rack-filter{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:4px;font-family:var(--font-mono);font-size:12px;cursor:pointer;}
+  .product-table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .product-table th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:11px;font-family:var(--font-mono);color:var(--muted);letter-spacing:1px;border-bottom:1px solid var(--border);}
+  .product-table td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .product-table tr:last-child td{border-bottom:none;}
+  .product-table tr:hover td{background:rgba(255,255,255,0.02);}
+  .product-table tr.selected td{background:rgba(255,77,0,0.06);}
+  .sku-text{font-family:var(--font-mono);font-size:12px;color:#ff8c42;}
+  .price-sale{color:var(--red);font-family:var(--font-mono);font-weight:700;}
+  .price-normal{font-family:var(--font-mono);font-weight:700;}
+  .disc-badge{background:rgba(248,81,73,0.18);color:var(--red);font-size:9px;font-family:var(--font-mono);font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;}
+
+  /* MOVE RACK MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:360px;}
+  .modal-title{font-family:var(--font-display);font-size:20px;letter-spacing:2px;margin-bottom:16px;}
+  .modal-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:6px;font-family:var(--font-mono);font-size:18px;width:100%;outline:none;text-align:center;margin-bottom:16px;}
+  .modal-input:focus{border-color:var(--accent);}
+  .modal-btns{display:flex;gap:8px;}
+  .modal-btn{flex:1;padding:12px;border-radius:6px;border:none;font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;}
+  .modal-btn.confirm{background:var(--accent);color:#fff;}
+  .modal-btn.cancel{background:var(--surface2);color:var(--muted);}
+
+  /* BOTTOM NAV */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:200;}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0;text-decoration:none;color:var(--muted);font-size:11px;transition:color 0.2s;gap:3px;}
+  .bottom-nav a.active{color:var(--accent);}
+  .nav-icon{font-size:20px;}
+
+  #toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 22px;font-size:14px;transition:transform 0.3s;z-index:999;white-space:nowrap;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.error{border-color:var(--red);}
+  #toast.success{border-color:var(--green);}
+  .divider{border:none;border-top:1px solid var(--border);margin:28px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">RACK<span>.</span>MONITOR</div>
+  <div class="nav-links">
+    <a href="/" class="nav-link">📸 스캔</a>
+    <a href="/dashboard" class="nav-link">📊 대시보드</a>
+    <a href="/manage" class="nav-link active">⚙️ 관리</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="store-tabs">
+    <button class="store-tab active" onclick="selectStore('gimhae', this)">김해</button>
+    <button class="store-tab" onclick="selectStore('jeonggwan', this)">정관</button>
+  </div>
+
+  <!-- 세션 목록 -->
+  <div class="section-title">
+    스캔 기록
+    <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono);font-weight:400">클릭하면 제품 목록 표시</span>
+  </div>
+  <div class="session-list" id="session-list">
+    <div style="text-align:center;padding:32px;color:var(--muted)">불러오는 중...</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 제품 관리 -->
+  <div class="product-section" id="product-section">
+    <div class="section-title">
+      제품 관리
+      <span style="font-size:12px;color:var(--muted);font-family:var(--font-mono);font-weight:400" id="product-session-label"></span>
+    </div>
+
+    <div class="product-toolbar">
+      <select class="rack-filter" id="rack-filter" onchange="filterByRack(this.value)">
+        <option value="">전체 랙</option>
+      </select>
+      <span class="selected-count" id="selected-count">0개 선택됨</span>
+      <button class="btn-sm" onclick="selectAll()">전체 선택</button>
+      <button class="btn-sm" onclick="deselectAll()">선택 해제</button>
+      <button class="btn-sm" onclick="openMoveModal()" id="btn-move" style="display:none">📦 랙 이동</button>
+      <button class="btn-sm danger" onclick="deleteSelected()" id="btn-delete" style="display:none">🗑️ 삭제</button>
+    </div>
+
+    <table class="product-table" id="product-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" onchange="toggleAll(this)"></th>
+          <th>랙</th><th>품번</th><th>제품명</th><th>정가</th><th>할인가</th><th>할인율</th>
+        </tr>
+      </thead>
+      <tbody id="product-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- 랙 이동 모달 -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">랙 이동</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px" id="modal-desc"></div>
+    <input type="number" class="modal-input" id="modal-rack-input" placeholder="이동할 랙 번호" min="1" max="99">
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+      <button class="modal-btn confirm" onclick="confirmMove()">이동</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="/"><span class="nav-icon">📸</span><span>스캔</span></a>
+  <a href="/dashboard"><span class="nav-icon">📊</span><span>대시보드</span></a>
+  <a href="/manage" class="active"><span class="nav-icon">⚙️</span><span>관리</span></a>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+let currentStore = 'gimhae';
+let currentSessionId = null;
+let allProducts = [];
+let selectedIds = new Set();
+
+const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
+
+function selectStore(store, el) {
+  currentStore = store;
+  document.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('product-section').classList.remove('show');
+  loadSessions();
+}
+
+async function loadSessions() {
+  try {
+    const res = await fetch(`/api/sessions?store=${currentStore}`);
+    const sessions = await res.json();
+    const list = document.getElementById('session-list');
+
+    if (!sessions.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">스캔 기록 없음</div>';
+      return;
+    }
+
+    list.innerHTML = sessions.map(s => `
+      <div class="session-item" onclick="loadSession(${s.id}, this)">
+        <div class="session-meta">
+          <div class="session-date">${s.scanned_at}</div>
+          <div class="session-stats">랙 ${s.rack_count}개 · 제품 ${s.product_count}개 · ${STORE_LABELS[s.store]}</div>
+        </div>
+        <div class="session-actions" onclick="event.stopPropagation()">
+          <button class="btn-sm success" onclick="downloadExcel(${s.id})">📥 엑셀</button>
+          <button class="btn-sm danger" onclick="deleteSession(${s.id})">🗑️ 삭제</button>
+        </div>
+      </div>`).join('');
+  } catch { }
+}
+
+async function loadSession(sessionId, el) {
+  document.querySelectorAll('.session-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  currentSessionId = sessionId;
+
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}`);
+    const data = await res.json();
+
+    allProducts = data.racks.flatMap(r => r.products.map(p => ({ ...p, rack_number: r.rack_number })));
+    selectedIds.clear();
+
+    document.getElementById('product-session-label').textContent = `${data.scanned_at} · ${allProducts.length}개 제품`;
+    document.getElementById('product-section').classList.add('show');
+
+    // 랙 필터 옵션
+    const rackNums = [...new Set(allProducts.map(p => p.rack_number))].sort((a,b)=>a-b);
+    const filter = document.getElementById('rack-filter');
+    filter.innerHTML = '<option value="">전체 랙</option>' +
+      rackNums.map(n => `<option value="${n}">RACK ${n}</option>`).join('');
+
+    renderProducts(allProducts);
+    document.getElementById('product-section').scrollIntoView({ behavior: 'smooth' });
+  } catch { showToast('로드 실패', 'error'); }
+}
+
+function renderProducts(products) {
+  const tbody = document.getElementById('product-tbody');
+  tbody.innerHTML = products.map(p => `
+    <tr class="${selectedIds.has(p.id) ? 'selected' : ''}" onclick="toggleSelect(${p.id}, this)">
+      <td><input type="checkbox" ${selectedIds.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();toggleSelect(${p.id}, this.closest('tr'))"></td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">RACK ${p.rack_number}</td>
+      <td><span class="sku-text">${p.sku||'-'}</span></td>
+      <td style="font-size:12px">${p.name||'-'}</td>
+      <td>${p.sale_price ? `<span class="price-sale">${fmt(p.sale_price)}</span>` : `<span class="price-normal">${fmt(p.price)}</span>`}</td>
+      <td>${p.sale_price ? `<span style="color:var(--muted);font-size:11px;text-decoration:line-through">${fmt(p.price)}</span>` : '-'}</td>
+      <td>${p.discount_rate ? `<span class="disc-badge">-${p.discount_rate}%</span>` : '-'}</td>
+    </tr>`).join('');
+  updateSelectionUI();
+}
+
+function toggleSelect(id, row) {
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+    row.classList.remove('selected');
+  } else {
+    selectedIds.add(id);
+    row.classList.add('selected');
+  }
+  updateSelectionUI();
+}
+
+function toggleAll(checkbox) {
+  if (checkbox.checked) selectAll(); else deselectAll();
+}
+
+function selectAll() {
+  const visible = getCurrentProducts();
+  visible.forEach(p => selectedIds.add(p.id));
+  renderProducts(visible);
+}
+
+function deselectAll() {
+  selectedIds.clear();
+  renderProducts(getCurrentProducts());
+}
+
+function getCurrentProducts() {
+  const rackVal = document.getElementById('rack-filter').value;
+  return rackVal ? allProducts.filter(p => p.rack_number == rackVal) : allProducts;
+}
+
+function filterByRack(val) {
+  renderProducts(val ? allProducts.filter(p => p.rack_number == val) : allProducts);
+}
+
+function updateSelectionUI() {
+  const count = selectedIds.size;
+  document.getElementById('selected-count').textContent = `${count}개 선택됨`;
+  document.getElementById('btn-move').style.display = count > 0 ? 'block' : 'none';
+  document.getElementById('btn-delete').style.display = count > 0 ? 'block' : 'none';
+}
+
+// ── 삭제 ──
+async function deleteSelected() {
+  if (!selectedIds.size) return;
+  if (!confirm(`${selectedIds.size}개 제품을 삭제할까요?`)) return;
+  try {
+    const form = new FormData();
+    [...selectedIds].forEach(id => form.append('product_ids', id));
+    await fetch('/api/products', { method: 'DELETE', body: form });
+    showToast(`✅ ${selectedIds.size}개 삭제 완료`, 'success');
+    loadSession(currentSessionId, document.querySelector('.session-item.selected'));
+  } catch { showToast('삭제 실패', 'error'); }
+}
+
+async function deleteSession(sessionId) {
+  if (!confirm('이 스캔 기록 전체를 삭제할까요?')) return;
+  try {
+    await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
+    showToast('✅ 삭제 완료', 'success');
+    document.getElementById('product-section').classList.remove('show');
+    loadSessions();
+  } catch { showToast('삭제 실패', 'error'); }
+}
+
+// ── 랙 이동 ──
+function openMoveModal() {
+  if (!selectedIds.size) return;
+  document.getElementById('modal-desc').textContent = `${selectedIds.size}개 제품을 이동할 랙 번호:`;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+async function confirmMove() {
+  const rackNum = parseInt(document.getElementById('modal-rack-input').value);
+  if (!rackNum || rackNum < 1) { showToast('랙 번호를 입력하세요', 'error'); return; }
+  try {
+    const form = new FormData();
+    [...selectedIds].forEach(id => form.append('product_ids', id));
+    form.append('target_rack', rackNum);
+    form.append('session_id', currentSessionId);
+    await fetch('/api/products/move-rack', { method: 'POST', body: form });
+    closeModal();
+    showToast(`✅ RACK ${rackNum}으로 이동 완료`, 'success');
+    loadSession(currentSessionId, document.querySelector('.session-item.selected'));
+  } catch { showToast('이동 실패', 'error'); }
+}
+
+// ── 엑셀 다운로드 ──
+function downloadExcel(sessionId) {
+  window.location.href = `/api/sessions/${sessionId}/excel`;
+}
+
+function fmt(n) {
+  if (!n && n !== 0) return '-';
+  return Number(n).toLocaleString('ko-KR') + '원';
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+selectStore('gimhae', document.querySelector('.store-tab.active'));
+</script>
+</body>
+</html>

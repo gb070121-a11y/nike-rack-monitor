@@ -38,3 +38,12 @@ CREATE INDEX IF NOT EXISTS idx_sessions_store ON sessions(store);
 ALTER TABLE sessions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE racks DISABLE ROW LEVEL SECURITY;
 ALTER TABLE products DISABLE ROW LEVEL SECURITY;
+
+-- 랙 구간 스캔 세션 테이블 (구간별 스캔 관리)
+CREATE TABLE IF NOT EXISTS rack_range_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    rack_from INTEGER NOT NULL,
+    rack_to INTEGER NOT NULL,
+    scanned_at TEXT NOT NULL
+);

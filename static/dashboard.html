@@ -184,6 +184,7 @@
       </select>
     </div>
     <button class="btn-export" onclick="exportCSV('all')">⬇ 전체 CSV</button>
+    <button class="btn-export" onclick="downloadExcel()" style="border-color:var(--green);color:var(--green)">📥 엑셀 다운로드</button>
   </div>
 
   <!-- KPI -->
@@ -525,6 +526,11 @@ function showLoading() {
 function showEmpty() {
   document.getElementById('rack-grid').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>스캔 데이터가 없습니다<br><a href="/" style="color:var(--accent)">스캔 시작하기 →</a></p></div>';
 }
+function downloadExcel() {
+  if (!currentData) return;
+  window.location.href = '/api/sessions/' + currentData.id + '/excel';
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -540,6 +546,10 @@ function showToast(msg) {
   <a href="/dashboard" class="active">
     <span class="nav-icon">📊</span>
     <span>대시보드</span>
+  </a>
+  <a href="/manage">
+    <span class="nav-icon">⚙️</span>
+    <span>관리</span>
   </a>
 </nav>
 </body>
