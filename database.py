@@ -255,3 +255,12 @@ def move_products_to_rack(product_ids: list, target_rack: int, session_id: int):
         rack_id = existing[0]["id"]
 
     db.table("products").update({"rack_number": target_rack, "rack_id": rack_id}).in_("id", product_ids).execute()
+
+
+def delete_rack_products(session_id: int, rack_number: int):
+    """랙 번호는 유지, 안의 제품만 삭제"""
+    db = get_client()
+    rack = db.table('racks').select('id').eq('session_id', session_id).eq('rack_number', rack_number).execute().data
+    if rack:
+        db.table('products').delete().eq('rack_id', rack[0]['id']).execute()
+        _update_session_stats(db, session_id)

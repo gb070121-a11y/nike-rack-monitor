@@ -6,11 +6,11 @@ import asyncio
 import base64
 import io
 import os
-from typing import List, Optional
+from typing import List
 from database import (init_db, save_scan_session, get_sessions, get_session_detail,
                       compare_sessions, append_scan_to_session, replace_rack_in_session,
-                      create_empty_session, finish_session, delete_session, delete_products,
-                      move_products_to_rack, get_client)
+                      create_empty_session, finish_session, delete_session,
+                      delete_rack_products, move_products_to_rack, delete_products)
 from analyzer import analyze_images_batch
 
 app = FastAPI(title="Nike Rack Monitor")
@@ -36,11 +36,6 @@ async def dashboard():
     with open("static/dashboard.html", "r", encoding="utf-8") as f:
         return f.read()
 
-@app.get("/manage", response_class=HTMLResponse)
-async def manage():
-    with open("static/manage.html", "r", encoding="utf-8") as f:
-        return f.read()
-
 async def read_images(files: List[UploadFile]) -> list:
     images = []
     for f in files:
@@ -60,19 +55,16 @@ def build_racks_from_map(images, rack_map, offset=0):
 
 async def analyze_rack_dict(rack_dict):
     all_racks = []
-    tasks = {}
-    for rack_num, imgs in rack_dict.items():
-        tasks[rack_num] = analyze_images_batch(imgs, start_rack_num=rack_num, single_rack=True)
+    tasks = {rack_num: analyze_images_batch(imgs, start_rack_num=rack_num, single_rack=True)
+             for rack_num, imgs in rack_dict.items()}
     results = await asyncio.gather(*tasks.values())
     for rack_num, racks in zip(tasks.keys(), results):
-        products = []
-        for r in racks:
-            products.extend(r["products"])
+        products = [p for r in racks for p in r["products"]]
         all_racks.append({"rack_number": rack_num, "products": products, "photo_count": len(rack_dict[rack_num])})
     return sorted(all_racks, key=lambda x: x["rack_number"])
 
 
-# ── 한번에 + 랙맵 ──
+# ── 스캔 API ──
 @app.post("/api/scan/with-racks")
 async def upload_scan_with_racks(
     store: str = Form(...),
@@ -86,17 +78,14 @@ async def upload_scan_with_racks(
     diff = compare_sessions(store, session_id)
     return JSONResponse({"session_id": session_id, "store": store,
                          "rack_count": len(all_racks),
-                         "product_count": sum(len(r["products"]) for r in all_racks), "diff": diff})
+                         "product_count": sum(len(r["products"]) for r in all_racks),
+                         "diff": diff})
 
-
-# ── 세션 시작 ──
 @app.post("/api/scan/start")
 async def start_session(store: str = Form(...)):
     session_id = create_empty_session(store)
     return JSONResponse({"session_id": session_id, "store": store})
 
-
-# ── 이어서 + 랙맵 ──
 @app.post("/api/scan/append-with-racks/{session_id}")
 async def append_scan_with_racks(
     session_id: int,
@@ -116,22 +105,19 @@ async def append_scan_with_racks(
                          "total_racks": len(updated["racks"]),
                          "total_products": sum(len(r["products"]) for r in updated["racks"])})
 
-
-# ── 세션 완료 ──
 @app.post("/api/scan/finish/{session_id}")
 async def finish_session_api(session_id: int):
     detail = get_session_detail(session_id)
     if not detail:
         raise HTTPException(status_code=404, detail="세션 없음")
     finish_session(session_id)
+    updated = get_session_detail(session_id)
     diff = compare_sessions(detail["store"], session_id)
     return JSONResponse({"session_id": session_id, "store": detail["store"],
-                         "total_racks": len(detail["racks"]),
-                         "total_products": sum(len(r["products"]) for r in detail["racks"]),
+                         "total_racks": len(updated["racks"]),
+                         "total_products": sum(len(r["products"]) for r in updated["racks"]),
                          "diff": diff})
 
-
-# ── 랙별 교체 ──
 @app.post("/api/scan/rack/{session_id}")
 async def upload_rack(
     session_id: int,
@@ -150,8 +136,6 @@ async def upload_rack(
                          "products_count": len(products),
                          "total_products": sum(len(r["products"]) for r in updated["racks"])})
 
-
-# ── 기존 한번에 (하위 호환) ──
 @app.post("/api/scan")
 async def upload_scan(store: str = Form(...), files: List[UploadFile] = File(...)):
     images = await read_images(files)
@@ -161,7 +145,7 @@ async def upload_scan(store: str = Form(...), files: List[UploadFile] = File(...
     return JSONResponse({"session_id": session_id, "store": store, "racks": racks, "diff": diff})
 
 
-# ── 세션 목록 / 상세 ──
+# ── 조회 ──
 @app.get("/api/sessions")
 async def list_sessions(store: str = None):
     return get_sessions(store)
@@ -173,8 +157,6 @@ async def session_detail(session_id: int):
         raise HTTPException(status_code=404, detail="세션 없음")
     return data
 
-
-# ── 비교 ──
 @app.get("/api/compare/{session_id_a}/{session_id_b}")
 async def compare_two(session_id_a: int, session_id_b: int):
     return compare_sessions(None, session_id_b, session_id_a)
@@ -187,21 +169,23 @@ async def compare_latest(session_id: int):
     return compare_sessions(detail["store"], session_id)
 
 
-# ── 데이터 관리: 세션 삭제 ──
+# ── 데이터 관리 ──
 @app.delete("/api/sessions/{session_id}")
 async def delete_session_api(session_id: int):
     delete_session(session_id)
     return JSONResponse({"success": True})
 
+@app.delete("/api/sessions/{session_id}/racks/{rack_number}/products")
+async def delete_rack_products_api(session_id: int, rack_number: int):
+    """랙 번호는 유지, 안의 제품만 삭제"""
+    delete_rack_products(session_id, rack_number)
+    return JSONResponse({"success": True})
 
-# ── 데이터 관리: 제품 삭제 ──
-@app.delete("/api/products")
-async def delete_products_api(product_ids: List[int] = Form(...)):
-    delete_products(product_ids)
-    return JSONResponse({"success": True, "deleted": len(product_ids)})
+@app.delete("/api/products/{product_id}")
+async def delete_product_api(product_id: int):
+    delete_products([product_id])
+    return JSONResponse({"success": True})
 
-
-# ── 데이터 관리: 랙 이동 ──
 @app.post("/api/products/move-rack")
 async def move_rack_api(
     product_ids: List[int] = Form(...),
@@ -214,7 +198,7 @@ async def move_rack_api(
 
 # ── 엑셀 다운로드 ──
 @app.get("/api/sessions/{session_id}/excel")
-async def download_excel(session_id: int, type: str = "all"):
+async def download_excel(session_id: int):
     try:
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment
@@ -226,37 +210,28 @@ async def download_excel(session_id: int, type: str = "all"):
         raise HTTPException(status_code=404, detail="세션 없음")
 
     diff = compare_sessions(detail["store"], session_id)
-
     wb = openpyxl.Workbook()
 
-    # 헤더 스타일
-    def style_header(ws, headers, fills):
-        for col, (h, fill) in enumerate(zip(headers, fills), 1):
+    def style_header(ws, headers, color):
+        for col, h in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=h)
             cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill("solid", fgColor=fill)
+            cell.fill = PatternFill("solid", fgColor=color)
             cell.alignment = Alignment(horizontal="center")
 
-    STORE_LABELS = {"gimhae": "김해", "jeonggwan": "정관"}
-    store_name = STORE_LABELS.get(detail["store"], detail["store"])
-
-    # 시트1: 전체 현황
+    # 시트1: 전체현황
     ws1 = wb.active
-    ws1.title = "전체현황"
-    headers1 = ["랙번호", "품번", "제품명", "정가", "할인가", "할인율"]
-    fills1 = ["FF4D00", "FF4D00", "FF4D00", "FF4D00", "FF4D00", "FF4D00"]
-    style_header(ws1, headers1, fills1)
+    ws1.title = "All"
+    style_header(ws1, ["Rack","SKU","Name","Price","Sale","Discount"], "FF4D00")
     for rack in detail["racks"]:
         for p in rack["products"]:
             ws1.append([rack["rack_number"], p.get("sku",""), p.get("name",""),
                         p.get("price",""), p.get("sale_price",""),
                         f"{p['discount_rate']}%" if p.get("discount_rate") else ""])
 
-    # 시트2: 신규 추가
-    ws2 = wb.create_sheet("신규추가")
-    headers2 = ["랙번호", "품번", "제품명", "정가", "할인가", "할인율"]
-    fills2 = ["39D353", "39D353", "39D353", "39D353", "39D353", "39D353"]
-    style_header(ws2, headers2, fills2)
+    # 시트2: 신규
+    ws2 = wb.create_sheet("Added")
+    style_header(ws2, ["Rack","SKU","Name","Price","Sale","Discount"], "39D353")
     if diff.get("has_previous"):
         for c in diff["changes"]:
             if c["type"] == "added":
@@ -264,11 +239,9 @@ async def download_excel(session_id: int, type: str = "all"):
                             c.get("new_price",""), c.get("new_sale_price",""),
                             f"{c['new_discount']}%" if c.get("new_discount") else ""])
 
-    # 시트3: 사라진 품번
-    ws3 = wb.create_sheet("사라진품번")
-    headers3 = ["랙번호", "품번", "제품명", "이전정가", "이전할인가", "이전할인율"]
-    fills3 = ["F85149", "F85149", "F85149", "F85149", "F85149", "F85149"]
-    style_header(ws3, headers3, fills3)
+    # 시트3: 사라짐
+    ws3 = wb.create_sheet("Removed")
+    style_header(ws3, ["Rack","SKU","Name","OldPrice","OldSale","OldDiscount"], "F85149")
     if diff.get("has_previous"):
         for c in diff["changes"]:
             if c["type"] == "removed":
@@ -277,30 +250,29 @@ async def download_excel(session_id: int, type: str = "all"):
                             f"{c['old_discount']}%" if c.get("old_discount") else ""])
 
     # 시트4: 가격변동
-    ws4 = wb.create_sheet("가격변동")
-    headers4 = ["랙번호", "품번", "제품명", "변동항목", "이전값", "새값"]
-    fills4 = ["E3B341", "E3B341", "E3B341", "E3B341", "E3B341", "E3B341"]
-    style_header(ws4, headers4, fills4)
+    ws4 = wb.create_sheet("Changed")
+    style_header(ws4, ["Rack","SKU","Name","Field","Old","New"], "E3B341")
     if diff.get("has_previous"):
-        field_labels = {"price": "정가", "sale_price": "할인가", "discount_rate": "할인율", "rack": "랙위치"}
+        fl = {"price":"Price","sale_price":"Sale","discount_rate":"Discount","rack":"Rack"}
         for c in diff["changes"]:
             if c["type"] == "changed":
                 for ch in c["changes"]:
                     ws4.append([c["rack"], c["sku"], c.get("name",""),
-                                field_labels.get(ch["field"], ch["field"]),
-                                ch["old"], ch["new"]])
+                                fl.get(ch["field"],ch["field"]), ch["old"], ch["new"]])
 
-    # 열 너비 자동 조정
     for ws in [ws1, ws2, ws3, ws4]:
         for col in ws.columns:
-            max_len = max((len(str(cell.value or "")) for cell in col), default=0)
-            ws.column_dimensions[col[0].column_letter].width = max(12, max_len + 2)
+            w = max((len(str(cell.value or "")) for cell in col), default=0)
+            ws.column_dimensions[col[0].column_letter].width = max(12, w + 2)
 
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
 
-    filename = f"rack_{detail['store']}_{detail['scanned_at'][:10]}.xlsx"
+    store = detail["store"]
+    date = detail["scanned_at"][:10]
+    filename = f"rack_{store}_{date}.xlsx"
+
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
