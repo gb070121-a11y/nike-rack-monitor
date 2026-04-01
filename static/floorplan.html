@@ -676,8 +676,8 @@ function showToast(msg, type='') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// 초기 빌드
-buildFloorplan('gimhae');
+// 초기 빌드 - DOM 완전 로드 후 실행
+document.addEventListener('DOMContentLoaded', () => buildFloorplan('gimhae'));
 </script>
 </body>
 </html>
