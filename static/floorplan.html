@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RACK MONITOR — 랙별등록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;
+    --accent:#ff4d00;--green:#39d353;--red:#f85149;--yellow:#e3b341;--blue:#58a6ff;
+    --text:#e8e8e8;--muted:#555;
+    --font-display:'Bebas Neue',sans-serif;
+    --font-body:'Noto Sans KR',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;padding-bottom:80px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--font-display);font-size:24px;letter-spacing:4px;}
+  .logo span{color:var(--accent);}
+  .store-tabs{display:flex;gap:6px;}
+  .store-tab{padding:6px 14px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .store-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+  .container{max-width:700px;margin:0 auto;padding:16px;}
+
+  /* 세션 바 */
+  .session-bar{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .session-badge{background:var(--accent);color:#fff;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:700;font-family:var(--font-mono);}
+  .btn-finish{background:var(--green);border:none;color:#000;padding:10px 18px;border-radius:6px;font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;}
+
+  /* 진행률 */
+  .progress-wrap{margin-bottom:14px;}
+  .progress-label{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;}
+  .progress-bar-bg{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width 0.4s;border-radius:4px;width:0%;}
+
+  /* 업로드 패널 */
+  .upload-panel{background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px;margin-bottom:14px;display:none;}
+  .upload-panel.show{display:block;}
+  .upload-panel-title{font-family:var(--font-display);font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:4px;}
+  .upload-panel-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .upload-zone{border:2px dashed var(--border);border-radius:8px;padding:32px 20px;text-align:center;cursor:pointer;position:relative;transition:all 0.2s;}
+  .upload-zone.drag-over{border-color:var(--accent);background:rgba(255,77,0,0.05);}
+  .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-zone-icon{font-size:36px;margin-bottom:8px;}
+  .upload-zone-text{color:var(--muted);font-size:14px;line-height:1.6;}
+  .upload-zone-text span{color:var(--accent);font-weight:700;}
+  .preview-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;margin-top:12px;}
+  .preview-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--border);}
+  .preview-thumb img{width:100%;height:100%;object-fit:cover;}
+  .btn-confirm{width:100%;margin-top:14px;padding:16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:20px;letter-spacing:3px;cursor:pointer;transition:all 0.2s;}
+  .btn-confirm:hover:not(:disabled){background:#ff6520;}
+  .btn-confirm:disabled{background:var(--muted);cursor:not-allowed;}
+  .btn-cancel{width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;}
+
+  /* 완료 결과 */
+  .result-section{background:var(--surface);border:1px solid var(--green);border-radius:10px;padding:16px;margin-bottom:14px;display:none;}
+  .result-section.show{display:block;}
+  .result-title{font-family:var(--font-display);font-size:18px;letter-spacing:2px;color:var(--green);margin-bottom:12px;}
+  .result-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .result-row:last-child{border-bottom:none;}
+  .diff-pills{display:flex;gap:6px;}
+  .diff-pill{font-size:11px;font-family:var(--font-mono);font-weight:700;padding:3px 10px;border-radius:20px;}
+  .pill-g{background:rgba(57,211,83,0.15);color:var(--green);}
+  .pill-r{background:rgba(248,81,73,0.15);color:var(--red);}
+  .pill-y{background:rgba(227,179,65,0.15);color:var(--yellow);}
+
+  /* ═══ 평면도 ═══ */
+  .floorplan-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+  .floorplan-title{font-family:var(--font-display);font-size:16px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;text-align:center;}
+
+  /* 전체 레이아웃: [가운데] [뒷벽(세로)] */
+  .floor-outer{display:grid;grid-template-columns:1fr 50px;gap:8px;align-items:stretch;}
+  .floor-left{display:flex;flex-direction:column;gap:5px;}
+  .floor-right{display:flex;}
+
+  /* 랙 공통 */
+  .rack{cursor:pointer;border-radius:6px;border:2px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all 0.2s;user-select:none;text-align:center;}
+  .rack:hover{filter:brightness(1.4);}
+  .rack-idle{background:var(--surface2);border-color:var(--border);color:var(--muted);}
+  .rack-selected{background:rgba(255,77,0,0.2)!important;border-color:var(--accent)!important;color:var(--accent)!important;}
+  .rack-uploading{background:rgba(227,179,65,0.15)!important;border-color:var(--yellow)!important;color:var(--yellow)!important;animation:pulse 1s infinite;}
+  .rack-done{background:rgba(57,211,83,0.15)!important;border-color:var(--green)!important;color:var(--green)!important;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+
+  /* 가로 벽랙 */
+  .horiz-rack{width:100%;height:40px;font-size:11px;}
+
+  /* 양면랙: 가로로 길게, A/B 위아래 */
+  .double-unit{display:flex;flex-direction:column;width:100%;}
+  .rack-a{height:28px;border-radius:6px 6px 0 0;border-bottom:1px solid var(--border)!important;font-size:11px;}
+  .rack-b{height:28px;border-radius:0 0 6px 6px;border-top:none!important;font-size:11px;}
+
+  /* 섹션 구분 */
+  .section-gap{height:4px;}
+  .section-label{font-size:9px;color:var(--muted);font-family:var(--font-mono);text-align:center;padding:2px 0;}
+
+  /* 중간 단면랙 */
+  .mid-rack-wrap{display:flex;justify-content:flex-start;}
+  .mid-rack{height:36px;width:60%;background:rgba(88,166,255,0.08);border-color:rgba(88,166,255,0.25);color:var(--blue);font-size:11px;}
+
+  /* 세로 뒷벽랙 */
+  .vert-rack{writing-mode:vertical-lr;text-orientation:mixed;transform:rotate(180deg);width:50px;height:100%;border-radius:6px;font-size:11px;}
+
+  /* 범례 */
+  .legend{display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+  .legend-dot{width:11px;height:11px;border-radius:3px;border:2px solid;}
+
+  /* 하단 탭 - z-index 높게 */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:500;}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0;text-decoration:none;color:var(--muted);font-size:11px;transition:color 0.2s;gap:3px;}
+  .bottom-nav a.active{color:var(--accent);}
+  .nav-icon{font-size:20px;}
+
+  /* 토스트 - 하단 탭 위 */
+  #toast{position:fixed;bottom:75px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 22px;font-size:14px;transition:transform 0.3s;z-index:400;white-space:nowrap;pointer-events:none;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.error{border-color:var(--red);}
+  #toast.success{border-color:var(--green);}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">RACK<span>.</span>MONITOR</div>
+  <div class="store-tabs">
+    <button class="store-tab active" onclick="selectStore('gimhae',this)">김해</button>
+    <button class="store-tab" onclick="selectStore('jeonggwan',this)">정관</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 세션 바 -->
+  <div class="session-bar">
+    <div id="session-info-area">
+      <div style="font-size:13px;color:var(--muted)">랙을 클릭하면 바로 등록할 수 있습니다</div>
+    </div>
+    <button class="btn-finish" id="btn-finish" onclick="finishSession()">✅ 스캔 완료</button>
+  </div>
+
+  <!-- 진행률 -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span id="progress-text">0 / 35 랙 완료</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+  </div>
+
+  <!-- 업로드 패널 -->
+  <div class="upload-panel" id="upload-panel">
+    <div class="upload-panel-title" id="panel-title">랙 선택</div>
+    <div class="upload-panel-sub" id="panel-sub">사진을 드래그하거나 클릭해서 업로드하세요</div>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
+      <div class="upload-zone-icon">📸</div>
+      <div class="upload-zone-text">사진을 <span>드래그앤드롭</span>하거나<br>클릭해서 선택하세요</div>
+    </div>
+    <div class="preview-thumbs" id="preview-thumbs"></div>
+    <button class="btn-confirm" id="btn-confirm" onclick="confirmUpload()" disabled>🔍 AI 분석 시작</button>
+    <button class="btn-cancel" onclick="cancelUpload()">취소</button>
+  </div>
+
+  <!-- 완료 결과 -->
+  <div class="result-section" id="result-section">
+    <div class="result-title">✅ 스캔 완료</div>
+    <div id="result-content"></div>
+  </div>
+
+  <!-- 평면도 -->
+  <div class="floorplan-wrap">
+    <div class="floorplan-title">📐 김해 매장 평면도</div>
+
+    <div class="floor-outer">
+      <div class="floor-left">
+
+        <!-- 왼_벽랙 (상단) -->
+        <div class="rack horiz-rack rack-idle" id="rack-왼_벽랙" onclick="selectRack('왼_벽랙')">왼_벽랙</div>
+
+        <!-- 양면랙 1~5 -->
+        <div class="section-label">━ 1~5 양면랙 ━</div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-1_양면A" onclick="selectRack('1_양면A')">1 양면 A</div><div class="rack rack-b rack-idle" id="rack-1_양면B" onclick="selectRack('1_양면B')">1 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-2_양면A" onclick="selectRack('2_양면A')">2 양면 A</div><div class="rack rack-b rack-idle" id="rack-2_양면B" onclick="selectRack('2_양면B')">2 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-3_양면A" onclick="selectRack('3_양면A')">3 양면 A</div><div class="rack rack-b rack-idle" id="rack-3_양면B" onclick="selectRack('3_양면B')">3 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-4_양면A" onclick="selectRack('4_양면A')">4 양면 A</div><div class="rack rack-b rack-idle" id="rack-4_양면B" onclick="selectRack('4_양면B')">4 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-5_양면A" onclick="selectRack('5_양면A')">5 양면 A</div><div class="rack rack-b rack-idle" id="rack-5_양면B" onclick="selectRack('5_양면B')">5 양면 B</div></div>
+
+        <!-- 중간A_랙 -->
+        <div class="mid-rack-wrap"><div class="rack mid-rack rack-idle" id="rack-중간A_랙" onclick="selectRack('중간A_랙')">중간 A 랙</div></div>
+
+        <!-- 양면랙 6~10 -->
+        <div class="section-label">━ 6~10 양면랙 ━</div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-6_양면A" onclick="selectRack('6_양면A')">6 양면 A</div><div class="rack rack-b rack-idle" id="rack-6_양면B" onclick="selectRack('6_양면B')">6 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-7_양면A" onclick="selectRack('7_양면A')">7 양면 A</div><div class="rack rack-b rack-idle" id="rack-7_양면B" onclick="selectRack('7_양면B')">7 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-8_양면A" onclick="selectRack('8_양면A')">8 양면 A</div><div class="rack rack-b rack-idle" id="rack-8_양면B" onclick="selectRack('8_양면B')">8 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-9_양면A" onclick="selectRack('9_양면A')">9 양면 A</div><div class="rack rack-b rack-idle" id="rack-9_양면B" onclick="selectRack('9_양면B')">9 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-10_양면A" onclick="selectRack('10_양면A')">10 양면 A</div><div class="rack rack-b rack-idle" id="rack-10_양면B" onclick="selectRack('10_양면B')">10 양면 B</div></div>
+
+        <!-- 중간B_랙 -->
+        <div class="mid-rack-wrap"><div class="rack mid-rack rack-idle" id="rack-중간B_랙" onclick="selectRack('중간B_랙')">중간 B 랙</div></div>
+
+        <!-- 양면랙 11~15 -->
+        <div class="section-label">━ 11~15 양면랙 ━</div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-11_양면A" onclick="selectRack('11_양면A')">11 양면 A</div><div class="rack rack-b rack-idle" id="rack-11_양면B" onclick="selectRack('11_양면B')">11 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-12_양면A" onclick="selectRack('12_양면A')">12 양면 A</div><div class="rack rack-b rack-idle" id="rack-12_양면B" onclick="selectRack('12_양면B')">12 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-13_양면A" onclick="selectRack('13_양면A')">13 양면 A</div><div class="rack rack-b rack-idle" id="rack-13_양면B" onclick="selectRack('13_양면B')">13 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-14_양면A" onclick="selectRack('14_양면A')">14 양면 A</div><div class="rack rack-b rack-idle" id="rack-14_양면B" onclick="selectRack('14_양면B')">14 양면 B</div></div>
+        <div class="double-unit"><div class="rack rack-a rack-idle" id="rack-15_양면A" onclick="selectRack('15_양면A')">15 양면 A</div><div class="rack rack-b rack-idle" id="rack-15_양면B" onclick="selectRack('15_양면B')">15 양면 B</div></div>
+
+        <!-- 오른_벽랙 (하단) -->
+        <div class="rack horiz-rack rack-idle" id="rack-오른_벽랙" onclick="selectRack('오른_벽랙')">오른_벽랙</div>
+
+      </div>
+
+      <!-- 뒷_벽랙 세로 우측 -->
+      <div class="floor-right">
+        <div class="rack vert-rack rack-idle" id="rack-뒷_벽랙" onclick="selectRack('뒷_벽랙')">뒷_벽랙</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--surface2);border-color:var(--border)"></div>미스캔</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,77,0,0.2);border-color:var(--accent)"></div>선택중</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(57,211,83,0.15);border-color:var(--green)"></div>완료</div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a href="/"><span class="nav-icon">📸</span><span>스캔</span></a>
+  <a href="/floorplan" class="active"><span class="nav-icon">🗺️</span><span>랙별등록</span></a>
+  <a href="/dashboard"><span class="nav-icon">📊</span><span>대시보드</span></a>
+</nav>
+<div id="toast"></div>
+
+<script>
+let currentStore = 'gimhae';
+let currentSessionId = null;
+let selectedRack = null;
+let pendingFiles = [];
+let doneRacks = new Set();
+const TOTAL_RACKS = 35;
+
+// 공유 세션
+function getSharedSession() {
+  try { return JSON.parse(localStorage.getItem('activeSession') || 'null'); } catch { return null; }
+}
+function setSharedSession(data) {
+  if (data) localStorage.setItem('activeSession', JSON.stringify(data));
+  else localStorage.removeItem('activeSession');
+}
+
+// 초기화: 기존 세션 있으면 이어서
+function initSession() {
+  const shared = getSharedSession();
+  if (shared) {
+    currentSessionId = shared.id;
+    updateSessionUI(shared);
+  }
+}
+
+function updateSessionUI(shared) {
+  document.getElementById('session-info-area').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;color:var(--muted)">진행중 세션</span>
+      <span class="session-badge">#${shared.id}</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--font-mono);margin-top:2px">랙 ${shared.racks||0}개 · 제품 ${shared.products||0}개</div>`;
+}
+
+function selectStore(store, el) {
+  currentStore = store;
+  document.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── 랙 클릭 → 바로 업로드 패널 열기 (세션 자동 생성) ──
+async function selectRack(rackName) {
+  if (selectedRack) setRackState(selectedRack, doneRacks.has(selectedRack) ? 'done' : 'idle');
+  selectedRack = rackName;
+  setRackState(rackName, 'selected');
+
+  document.getElementById('panel-title').textContent = '📍 ' + rackName;
+  document.getElementById('panel-sub').textContent = '사진을 드래그하거나 클릭해서 업로드하세요';
+  document.getElementById('upload-panel').classList.add('show');
+  document.getElementById('preview-thumbs').innerHTML = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('btn-confirm').disabled = true;
+  document.getElementById('btn-confirm').textContent = '🔍 AI 분석 시작';
+  document.getElementById('upload-zone').querySelector('.upload-zone-icon').textContent = '📸';
+  document.getElementById('upload-zone').querySelector('.upload-zone-text').innerHTML = '사진을 <span>드래그앤드롭</span>하거나<br>클릭해서 선택하세요';
+  pendingFiles = [];
+  document.getElementById('upload-panel').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+async function autoStartSession() {
+  const form = new FormData();
+  form.append('store', currentStore);
+  try {
+    const res = await fetch('/api/scan/start', { method:'POST', body:form });
+    const data = await res.json();
+    currentSessionId = data.session_id;
+    const sessionData = { id: currentSessionId, racks: 0, products: 0, store: currentStore };
+    setSharedSession(sessionData);
+    updateSessionUI(sessionData);
+  } catch { showToast('세션 시작 실패', 'error'); }
+}
+
+function setRackState(rackName, state) {
+  const el = document.getElementById('rack-'+rackName);
+  if (!el) return;
+  el.classList.remove('rack-idle','rack-selected','rack-uploading','rack-done');
+  el.classList.add('rack-'+state);
+}
+
+// ── 파일 선택 ──
+function handleFiles(files) {
+  pendingFiles = [...pendingFiles, ...Array.from(files)];
+  renderPreviews();
+  document.getElementById('btn-confirm').disabled = pendingFiles.length === 0;
+  document.getElementById('file-input').value = '';
+}
+
+function renderPreviews() {
+  const thumbs = document.getElementById('preview-thumbs');
+  thumbs.innerHTML = '';
+  pendingFiles.forEach(file => {
+    const div = document.createElement('div');
+    div.className = 'preview-thumb';
+    const reader = new FileReader();
+    reader.onload = e => { div.innerHTML = `<img src="${e.target.result}">`; };
+    reader.readAsDataURL(file);
+    thumbs.appendChild(div);
+  });
+  const text = document.getElementById('upload-zone').querySelector('.upload-zone-text');
+  text.innerHTML = `📎 <span>${pendingFiles.length}장 선택됨</span> — 더 추가하려면 클릭`;
+}
+
+// 드래그앤드롭
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', e => { if (!uploadZone.contains(e.relatedTarget)) uploadZone.classList.remove('drag-over'); });
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+// ── AI 분석 ──
+async function confirmUpload() {
+  if (!pendingFiles.length || !selectedRack || !currentSessionId) return;
+  const btn = document.getElementById('btn-confirm');
+  btn.disabled = true; btn.textContent = '⏳ 분석 중...';
+  setRackState(selectedRack, 'uploading');
+
+  try {
+    const form = new FormData();
+    form.append('store', currentStore);
+    form.append('rack_name', selectedRack);
+    pendingFiles.forEach(f => form.append('files', f));
+    const res = await fetch('/api/scan/rack', { method:'POST', body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    doneRacks.add(selectedRack);
+    setRackState(selectedRack, 'done');
+    updateProgress();
+
+    // 공유 세션 업데이트
+    const shared = getSharedSession();
+    if (shared) setSharedSession({ ...shared, racks: data.total_products > 0 ? (shared.racks || 0) + 1 : shared.racks, products: data.total_products });
+
+    cancelUpload();
+    showToast(`✅ ${selectedRack} — ${data.products_count}개 제품 완료`, 'success');
+  } catch(e) {
+    setRackState(selectedRack, 'selected');
+    showToast('❌ '+e.message, 'error');
+    btn.disabled = false; btn.textContent = '🔍 AI 분석 시작';
+  }
+}
+
+function cancelUpload() {
+  if (selectedRack && !doneRacks.has(selectedRack)) setRackState(selectedRack, 'idle');
+  selectedRack = null; pendingFiles = [];
+  document.getElementById('upload-panel').classList.remove('show');
+  document.getElementById('preview-thumbs').innerHTML = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('btn-confirm').disabled = true;
+  document.getElementById('btn-confirm').textContent = '🔍 AI 분석 시작';
+}
+
+function updateProgress() {
+  const done = doneRacks.size;
+  const pct = Math.round(done/TOTAL_RACKS*100);
+  document.getElementById('progress-bar').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `${done} / ${TOTAL_RACKS} 랙 완료`;
+  document.getElementById('progress-pct').textContent = pct+'%';
+}
+
+async function finishSession() {
+  if (!currentSessionId) { showToast('진행중인 스캔이 없습니다', 'error'); return; }
+  if (!confirm('스캔을 완료하고 저장할까요?')) return;
+  try {
+    const res = await fetch(`/api/scan/finish/${currentSessionId}`, { method:'POST' });
+    const data = await res.json();
+    const diff = data.diff;
+    let diffHtml = '';
+    if (diff && diff.has_previous) {
+      const s = diff.summary;
+      diffHtml = `<div class="result-row"><span style="color:var(--muted)">변동 내역</span><div class="diff-pills"><span class="diff-pill pill-g">+${s.added}</span><span class="diff-pill pill-r">-${s.removed}</span><span class="diff-pill pill-y">~${s.changed}</span></div></div>`;
+    }
+    document.getElementById('result-content').innerHTML = `
+      <div class="result-row"><span style="color:var(--muted)">완료 랙</span><span style="font-family:var(--font-mono);font-weight:700">${doneRacks.size}개</span></div>
+      <div class="result-row"><span style="color:var(--muted)">전체 제품</span><span style="font-family:var(--font-mono);font-weight:700">${data.total_products}개</span></div>
+      ${diffHtml}
+      <div style="margin-top:12px"><a href="/dashboard" style="color:var(--accent);font-size:13px;text-decoration:none">📊 대시보드 확인하기 →</a></div>`;
+    document.getElementById('result-section').classList.add('show');
+    currentSessionId = null;
+    setSharedSession(null);
+    document.getElementById('session-info-area').innerHTML = '<div style="font-size:13px;color:var(--muted)">랙을 클릭하면 바로 등록할 수 있습니다</div>';
+    showToast('🎉 스캔 완료!', 'success');
+  } catch { showToast('❌ 완료 실패', 'error'); }
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// 초기화
+initSession();
+</script>
+</body>
+</html>

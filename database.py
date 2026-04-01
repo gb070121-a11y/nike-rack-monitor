@@ -14,253 +14,222 @@ def get_client() -> Client:
         _client = create_client(SUPABASE_URL, SUPABASE_KEY)
     return _client
 
+def now() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def init_db():
-    """Supabase 테이블 생성 확인 — 테이블은 Supabase 대시보드에서 생성"""
     pass
 
 
-def create_empty_session(store: str) -> int:
-    db = get_client()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    res = db.table("sessions").insert({
-        "store": store,
-        "scanned_at": now,
-        "rack_count": 0,
-        "product_count": 0,
-        "status": "in_progress"
-    }).execute()
-    return res.data[0]["id"]
+# ============================================================
+# RACK_MAP: 랙 이름 → 번호 매핑
+# ============================================================
+RACK_MAP = {
+    "왼_벽랙": 1, "뒷_벽랙": 2, "오른_벽랙": 3,
+    "1_양면A": 4,  "1_양면B": 5,
+    "2_양면A": 6,  "2_양면B": 7,
+    "3_양면A": 8,  "3_양면B": 9,
+    "4_양면A": 10, "4_양면B": 11,
+    "5_양면A": 12, "5_양면B": 13,
+    "중간A_랙": 14,
+    "6_양면A": 15, "6_양면B": 16,
+    "7_양면A": 17, "7_양면B": 18,
+    "8_양면A": 19, "8_양면B": 20,
+    "9_양면A": 21, "9_양면B": 22,
+    "10_양면A": 23,"10_양면B": 24,
+    "중간B_랙": 25,
+    "11_양면A": 26,"11_양면B": 27,
+    "12_양면A": 28,"12_양면B": 29,
+    "13_양면A": 30,"13_양면B": 31,
+    "14_양면A": 32,"14_양면B": 33,
+    "15_양면A": 34,"15_양면B": 35,
+}
 
 
-def save_scan_session(store: str, racks: list) -> int:
-    db = get_client()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    total_products = sum(len(r["products"]) for r in racks)
+# ============================================================
+# 변동 감지: 이전 제품 vs 신규 제품 비교
+# ============================================================
+def detect_changes(old_products: list, new_products: list) -> dict:
+    old_map = {p["sku"]: p for p in old_products if p.get("sku")}
+    new_map = {p["sku"]: p for p in new_products if p.get("sku")}
 
-    res = db.table("sessions").insert({
-        "store": store,
-        "scanned_at": now,
-        "rack_count": len(racks),
-        "product_count": total_products,
-        "status": "complete"
-    }).execute()
-    session_id = res.data[0]["id"]
-    _insert_racks(db, session_id, store, racks)
-    return session_id
+    added, removed, changed = [], [], []
 
-
-def append_scan_to_session(session_id: int, racks: list):
-    db = get_client()
-    store = db.table("sessions").select("store").eq("id", session_id).execute().data[0]["store"]
-    _insert_racks(db, session_id, store, racks)
-    _update_session_stats(db, session_id)
-
-
-def replace_rack_in_session(session_id: int, rack_number: int, products: list):
-    db = get_client()
-    store = db.table("sessions").select("store").eq("id", session_id).execute().data[0]["store"]
-
-    # 기존 랙 찾기
-    old_racks = db.table("racks").select("id").eq("session_id", session_id).eq("rack_number", rack_number).execute().data
-    if old_racks:
-        old_rack_id = old_racks[0]["id"]
-        db.table("products").delete().eq("rack_id", old_rack_id).execute()
-        db.table("racks").delete().eq("id", old_rack_id).execute()
-
-    # 새 랙 삽입
-    rack_res = db.table("racks").insert({
-        "session_id": session_id,
-        "rack_number": rack_number,
-        "photo_count": len(products)
-    }).execute()
-    rack_id = rack_res.data[0]["id"]
-
-    if products:
-        db.table("products").insert([{
-            "rack_id": rack_id,
-            "session_id": session_id,
-            "store": store,
-            "rack_number": rack_number,
-            "sku": p.get("sku", "UNKNOWN"),
-            "name": p.get("name"),
-            "price": p.get("price"),
-            "sale_price": p.get("sale_price"),
-            "discount_rate": p.get("discount_rate"),
-            "position": p.get("position", 0)
-        } for p in products]).execute()
-
-    _update_session_stats(db, session_id)
-
-
-def _insert_racks(db, session_id: int, store: str, racks: list):
-    for rack in racks:
-        rack_res = db.table("racks").insert({
-            "session_id": session_id,
-            "rack_number": rack["rack_number"],
-            "photo_count": rack.get("photo_count", 0)
-        }).execute()
-        rack_id = rack_res.data[0]["id"]
-
-        if rack["products"]:
-            db.table("products").insert([{
-                "rack_id": rack_id,
-                "session_id": session_id,
-                "store": store,
-                "rack_number": rack["rack_number"],
-                "sku": p.get("sku", "UNKNOWN"),
-                "name": p.get("name"),
-                "price": p.get("price"),
-                "sale_price": p.get("sale_price"),
-                "discount_rate": p.get("discount_rate"),
-                "position": p.get("position", 0)
-            } for p in rack["products"]]).execute()
-
-
-def _update_session_stats(db, session_id: int):
-    racks = db.table("racks").select("id").eq("session_id", session_id).execute().data
-    products = db.table("products").select("id").eq("session_id", session_id).execute().data
-    db.table("sessions").update({
-        "rack_count": len(racks),
-        "product_count": len(products)
-    }).eq("id", session_id).execute()
-
-
-def get_sessions(store: str = None) -> list:
-    db = get_client()
-    query = db.table("sessions").select("*").order("scanned_at", desc=True).limit(50)
-    if store:
-        query = query.eq("store", store)
-    return query.execute().data
-
-
-def get_session_detail(session_id: int) -> dict:
-    db = get_client()
-    session = db.table("sessions").select("*").eq("id", session_id).execute().data
-    if not session:
-        return None
-    session = session[0]
-
-    racks_raw = db.table("racks").select("*").eq("session_id", session_id).order("rack_number").execute().data
-    racks = []
-    for rack in racks_raw:
-        products = db.table("products").select("*").eq("rack_id", rack["id"]).order("position").execute().data
-        racks.append({**rack, "products": products})
-
-    return {**session, "racks": racks}
-
-
-def finish_session(session_id: int):
-    db = get_client()
-    db.table("sessions").update({"status": "complete"}).eq("id", session_id).execute()
-    _update_session_stats(db, session_id)
-
-
-def compare_sessions(store: str, new_session_id: int, old_session_id: int = None) -> dict:
-    db = get_client()
-
-    if old_session_id is None:
-        prev = db.table("sessions").select("id").eq("store", store).eq("status", "complete").lt("id", new_session_id).order("id", desc=True).limit(1).execute().data
-        if not prev:
-            return {"has_previous": False, "changes": []}
-        old_session_id = prev[0]["id"]
-
-    def get_products_dict(sid):
-        rows = db.table("products").select("*").eq("session_id", sid).execute().data
-        d = {}
-        for r in rows:
-            key = f"{r['rack_number']}:{r['sku']}"
-            d[key] = r
-        return d
-
-    old_products = get_products_dict(old_session_id)
-    new_products = get_products_dict(new_session_id)
-    old_session = db.table("sessions").select("*").eq("id", old_session_id).execute().data
-    old_session = old_session[0] if old_session else None
-
-    changes = []
-    all_keys = set(old_products.keys()) | set(new_products.keys())
-
-    for key in all_keys:
-        old = old_products.get(key)
-        new = new_products.get(key)
-
-        if old and not new:
-            changes.append({
-                "type": "removed", "rack": old["rack_number"], "sku": old["sku"],
-                "name": old.get("name"), "old_price": old.get("price"),
-                "old_sale_price": old.get("sale_price"), "old_discount": old.get("discount_rate"),
-            })
-        elif new and not old:
-            changes.append({
-                "type": "added", "rack": new["rack_number"], "sku": new["sku"],
-                "name": new.get("name"), "new_price": new.get("price"),
-                "new_sale_price": new.get("sale_price"), "new_discount": new.get("discount_rate"),
-            })
+    for sku, p in new_map.items():
+        if sku not in old_map:
+            added.append(sku)
         else:
-            price_changed = old.get("price") != new.get("price")
-            sale_changed = old.get("sale_price") != new.get("sale_price")
-            discount_changed = old.get("discount_rate") != new.get("discount_rate")
-            rack_changed = old.get("rack_number") != new.get("rack_number")
-            if price_changed or sale_changed or discount_changed or rack_changed:
-                change = {"type": "changed", "rack": new["rack_number"], "sku": new["sku"],
-                          "name": new.get("name"), "changes": []}
-                if price_changed:
-                    change["changes"].append({"field": "price", "old": old.get("price"), "new": new.get("price")})
-                if sale_changed:
-                    change["changes"].append({"field": "sale_price", "old": old.get("sale_price"), "new": new.get("sale_price")})
-                if discount_changed:
-                    change["changes"].append({"field": "discount_rate", "old": old.get("discount_rate"), "new": new.get("discount_rate")})
-                if rack_changed:
-                    change["changes"].append({"field": "rack", "old": old.get("rack_number"), "new": new.get("rack_number")})
-                changes.append(change)
+            diffs = []
+            for field in ["price", "sale_price", "discount_rate"]:
+                ov, nv = old_map[sku].get(field), p.get(field)
+                if ov != nv:
+                    diffs.append({"field": field, "old": ov, "new": nv})
+            if diffs:
+                changed.append({"sku": sku, "changes": diffs})
+
+    for sku in old_map:
+        if sku not in new_map:
+            removed.append(sku)
 
     return {
-        "has_previous": True,
-        "compared_with_session": old_session_id,
-        "compared_with_date": old_session["scanned_at"] if old_session else None,
+        "added": added,
+        "removed": removed,
+        "changed": changed,
         "summary": {
-            "added": len([c for c in changes if c["type"] == "added"]),
-            "removed": len([c for c in changes if c["type"] == "removed"]),
-            "changed": len([c for c in changes if c["type"] == "changed"]),
+            "added": len(added),
+            "removed": len(removed),
+            "changed": len(changed),
         },
-        "changes": changes
+        "has_changes": bool(added or removed or changed)
     }
 
 
-def finish_session(session_id: int):
+# ============================================================
+# 랙 스캔 저장 (upsert)
+# ============================================================
+def save_rack_scan(store: str, rack_name: str, products: list) -> dict:
     db = get_client()
-    db.table("sessions").update({"status": "complete"}).eq("id", session_id).execute()
-    _update_session_stats(db, session_id)
+    rack_number = RACK_MAP.get(rack_name, 99)
+    scanned_at = now()
+
+    # 기존 데이터 조회
+    existing = db.table("rack_master")\
+        .select("id,products")\
+        .eq("store", store)\
+        .eq("rack_name", rack_name)\
+        .execute().data
+
+    old_products = existing[0]["products"] if existing else []
+
+    # 변동 감지
+    changes = detect_changes(old_products, products)
+
+    # rack_master upsert
+    db.table("rack_master").upsert({
+        "store": store,
+        "rack_name": rack_name,
+        "rack_number": rack_number,
+        "products": products,
+        "product_count": len(products),
+        "last_scanned_at": scanned_at,
+    }, on_conflict="store,rack_name").execute()
+
+    # 이력 저장 (변동 있을 때만)
+    if changes["has_changes"] or not existing:
+        db.table("rack_history").insert({
+            "store": store,
+            "rack_name": rack_name,
+            "rack_number": rack_number,
+            "products": products,
+            "product_count": len(products),
+            "changes": changes,
+            "scanned_at": scanned_at,
+        }).execute()
+
+    return {
+        "rack_name": rack_name,
+        "rack_number": rack_number,
+        "products_count": len(products),
+        "changes": changes,
+        "scanned_at": scanned_at,
+    }
 
 
-def delete_session(session_id: int):
+# ============================================================
+# 매장 전체 현황 조회 (캐시 최적화: 한 번에 가져오기)
+# ============================================================
+def get_store_overview(store: str) -> dict:
     db = get_client()
-    db.table("sessions").delete().eq("id", session_id).execute()
+
+    racks = db.table("rack_master")\
+        .select("rack_name,rack_number,products,product_count,last_scanned_at")\
+        .eq("store", store)\
+        .order("rack_number")\
+        .execute().data
+
+    total_products = sum(r["product_count"] for r in racks)
+    discounted = sum(
+        1 for r in racks for p in r["products"]
+        if p.get("sale_price") or p.get("discount_rate")
+    )
+
+    return {
+        "store": store,
+        "racks": racks,
+        "rack_count": len(racks),
+        "total_products": total_products,
+        "discounted_count": discounted,
+    }
 
 
-def delete_products(product_ids: list):
+# ============================================================
+# 최근 변동 이력 조회
+# ============================================================
+def get_recent_changes(store: str, limit: int = 50) -> list:
     db = get_client()
-    db.table("products").delete().in_("id", product_ids).execute()
+    rows = db.table("rack_history")\
+        .select("rack_name,rack_number,changes,scanned_at,product_count")\
+        .eq("store", store)\
+        .order("scanned_at", desc=True)\
+        .limit(limit)\
+        .execute().data
+    return rows
 
 
-def move_products_to_rack(product_ids: list, target_rack: int, session_id: int):
+# ============================================================
+# 특정 랙 이력 조회
+# ============================================================
+def get_rack_history(store: str, rack_name: str, limit: int = 10) -> list:
     db = get_client()
-    # 타겟 랙이 없으면 생성
-    existing = db.table("racks").select("id").eq("session_id", session_id).eq("rack_number", target_rack).execute().data
-    if not existing:
-        db.table("racks").insert({"session_id": session_id, "rack_number": target_rack, "photo_count": 0}).execute()
-        rack_id = db.table("racks").select("id").eq("session_id", session_id).eq("rack_number", target_rack).execute().data[0]["id"]
-    else:
-        rack_id = existing[0]["id"]
+    rows = db.table("rack_history")\
+        .select("products,product_count,changes,scanned_at")\
+        .eq("store", store)\
+        .eq("rack_name", rack_name)\
+        .order("scanned_at", desc=True)\
+        .limit(limit)\
+        .execute().data
+    return rows
 
-    db.table("products").update({"rack_number": target_rack, "rack_id": rack_id}).in_("id", product_ids).execute()
 
-
-def delete_rack_products(session_id: int, rack_number: int):
-    """랙 번호는 유지, 안의 제품만 삭제"""
+# ============================================================
+# SKU 검색
+# ============================================================
+def search_sku(store: str, sku: str) -> list:
     db = get_client()
-    rack = db.table('racks').select('id').eq('session_id', session_id).eq('rack_number', rack_number).execute().data
-    if rack:
-        db.table('products').delete().eq('rack_id', rack[0]['id']).execute()
-        _update_session_stats(db, session_id)
+    racks = db.table("rack_master")\
+        .select("rack_name,rack_number,products")\
+        .eq("store", store)\
+        .execute().data
+
+    results = []
+    sku_lower = sku.lower()
+    for rack in racks:
+        for p in rack["products"]:
+            if sku_lower in (p.get("sku") or "").lower():
+                results.append({
+                    "rack_name": rack["rack_name"],
+                    "rack_number": rack["rack_number"],
+                    "product": p
+                })
+    return results
+
+
+# ============================================================
+# 랙 제품 삭제 (랙 자체 삭제)
+# ============================================================
+def delete_rack(store: str, rack_name: str):
+    db = get_client()
+    db.table("rack_master")\
+        .delete()\
+        .eq("store", store)\
+        .eq("rack_name", rack_name)\
+        .execute()
+
+
+# ============================================================
+# 엑셀용 전체 데이터
+# ============================================================
+def get_excel_data(store: str) -> dict:
+    overview = get_store_overview(store)
+    changes = get_recent_changes(store, limit=200)
+    return {"overview": overview, "changes": changes}

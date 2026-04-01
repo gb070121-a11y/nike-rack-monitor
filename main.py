@@ -7,13 +7,15 @@ import base64
 import io
 import os
 from typing import List
-from database import (init_db, save_scan_session, get_sessions, get_session_detail,
-                      compare_sessions, append_scan_to_session, replace_rack_in_session,
-                      create_empty_session, finish_session, delete_session,
-                      delete_rack_products, move_products_to_rack, delete_products)
+
+from database import (
+    init_db, save_rack_scan, get_store_overview,
+    get_recent_changes, get_rack_history, search_sku,
+    delete_rack, get_excel_data, RACK_MAP
+)
 from analyzer import analyze_images_batch
 
-app = FastAPI(title="Nike Rack Monitor")
+app = FastAPI(title="Nike Rack Monitor V2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,9 +28,15 @@ init_db()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+# ── 페이지 라우트 ──
 @app.get("/", response_class=HTMLResponse)
 async def root():
     with open("static/index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/floorplan", response_class=HTMLResponse)
+async def floorplan():
+    with open("static/floorplan.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -36,180 +44,152 @@ async def dashboard():
     with open("static/dashboard.html", "r", encoding="utf-8") as f:
         return f.read()
 
+
+# ── 이미지 읽기 헬퍼 ──
 async def read_images(files: List[UploadFile]) -> list:
     images = []
     for f in files:
         data = await f.read()
         b64 = base64.b64encode(data).decode("utf-8")
-        images.append({"filename": f.filename, "b64": b64, "content_type": f.content_type or "image/jpeg"})
+        images.append({
+            "filename": f.filename,
+            "b64": b64,
+            "content_type": f.content_type or "image/jpeg"
+        })
     return images
 
-def build_racks_from_map(images, rack_map, offset=0):
-    rack_dict = {}
-    for img, rack_num in zip(images, rack_map):
-        actual = rack_num + offset
-        if actual not in rack_dict:
-            rack_dict[actual] = []
-        rack_dict[actual].append(img)
-    return rack_dict
 
-async def analyze_rack_dict(rack_dict):
-    all_racks = []
-    tasks = {rack_num: analyze_images_batch(imgs, start_rack_num=rack_num, single_rack=True)
-             for rack_num, imgs in rack_dict.items()}
-    results = await asyncio.gather(*tasks.values())
-    for rack_num, racks in zip(tasks.keys(), results):
-        products = [p for r in racks for p in r["products"]]
-        all_racks.append({"rack_number": rack_num, "products": products, "photo_count": len(rack_dict[rack_num])})
-    return sorted(all_racks, key=lambda x: x["rack_number"])
+# ============================================================
+# 스캔 API
+# ============================================================
 
-
-# ── 스캔 API ──
-@app.post("/api/scan/with-racks")
-async def upload_scan_with_racks(
+# ── 랙별 스캔 (평면도에서 클릭) ──
+@app.post("/api/scan/rack")
+async def scan_rack(
     store: str = Form(...),
-    files: List[UploadFile] = File(...),
-    rack_map: List[int] = Form(...)
-):
-    images = await read_images(files)
-    rack_dict = build_racks_from_map(images, rack_map)
-    all_racks = await analyze_rack_dict(rack_dict)
-    session_id = save_scan_session(store, all_racks)
-    diff = compare_sessions(store, session_id)
-    return JSONResponse({"session_id": session_id, "store": store,
-                         "rack_count": len(all_racks),
-                         "product_count": sum(len(r["products"]) for r in all_racks),
-                         "diff": diff})
-
-@app.post("/api/scan/start")
-async def start_session(store: str = Form(...)):
-    session_id = create_empty_session(store)
-    return JSONResponse({"session_id": session_id, "store": store})
-
-@app.post("/api/scan/append-with-racks/{session_id}")
-async def append_scan_with_racks(
-    session_id: int,
-    files: List[UploadFile] = File(...),
-    rack_map: List[int] = Form(...)
-):
-    detail = get_session_detail(session_id)
-    if not detail:
-        raise HTTPException(status_code=404, detail="세션 없음")
-    images = await read_images(files)
-    offset = len(detail["racks"])
-    rack_dict = build_racks_from_map(images, rack_map, offset)
-    all_racks = await analyze_rack_dict(rack_dict)
-    append_scan_to_session(session_id, all_racks)
-    updated = get_session_detail(session_id)
-    return JSONResponse({"session_id": session_id, "added_racks": len(all_racks),
-                         "total_racks": len(updated["racks"]),
-                         "total_products": sum(len(r["products"]) for r in updated["racks"])})
-
-@app.post("/api/scan/finish/{session_id}")
-async def finish_session_api(session_id: int):
-    detail = get_session_detail(session_id)
-    if not detail:
-        raise HTTPException(status_code=404, detail="세션 없음")
-    finish_session(session_id)
-    updated = get_session_detail(session_id)
-    diff = compare_sessions(detail["store"], session_id)
-    return JSONResponse({"session_id": session_id, "store": detail["store"],
-                         "total_racks": len(updated["racks"]),
-                         "total_products": sum(len(r["products"]) for r in updated["racks"]),
-                         "diff": diff})
-
-@app.post("/api/scan/rack/{session_id}")
-async def upload_rack(
-    session_id: int,
-    rack_number: int = Form(...),
+    rack_name: str = Form(...),
     files: List[UploadFile] = File(...)
 ):
-    detail = get_session_detail(session_id)
-    if not detail:
-        raise HTTPException(status_code=404, detail="세션 없음")
+    if rack_name not in RACK_MAP:
+        raise HTTPException(status_code=400, detail=f"알 수 없는 랙: {rack_name}")
+
     images = await read_images(files)
+    rack_number = RACK_MAP[rack_name]
+
     racks = await analyze_images_batch(images, start_rack_num=rack_number, single_rack=True)
     products = racks[0]["products"] if racks else []
-    replace_rack_in_session(session_id, rack_number, products)
-    updated = get_session_detail(session_id)
-    return JSONResponse({"session_id": session_id, "rack_number": rack_number,
-                         "products_count": len(products),
-                         "total_products": sum(len(r["products"]) for r in updated["racks"])})
 
-@app.post("/api/scan")
-async def upload_scan(store: str = Form(...), files: List[UploadFile] = File(...)):
-    images = await read_images(files)
-    racks = await analyze_images_batch(images)
-    session_id = save_scan_session(store, racks)
-    diff = compare_sessions(store, session_id)
-    return JSONResponse({"session_id": session_id, "store": store, "racks": racks, "diff": diff})
+    result = save_rack_scan(store, rack_name, products)
+    return JSONResponse(result)
 
 
-# ── 조회 ──
-@app.get("/api/sessions")
-async def list_sessions(store: str = None):
-    return get_sessions(store)
-
-@app.get("/api/sessions/{session_id}")
-async def session_detail(session_id: int):
-    data = get_session_detail(session_id)
-    if not data:
-        raise HTTPException(status_code=404, detail="세션 없음")
-    return data
-
-@app.get("/api/compare/{session_id_a}/{session_id_b}")
-async def compare_two(session_id_a: int, session_id_b: int):
-    return compare_sessions(None, session_id_b, session_id_a)
-
-@app.get("/api/compare-latest/{session_id}")
-async def compare_latest(session_id: int):
-    detail = get_session_detail(session_id)
-    if not detail:
-        raise HTTPException(status_code=404, detail="세션 없음")
-    return compare_sessions(detail["store"], session_id)
-
-
-# ── 데이터 관리 ──
-@app.delete("/api/sessions/{session_id}")
-async def delete_session_api(session_id: int):
-    delete_session(session_id)
-    return JSONResponse({"success": True})
-
-@app.delete("/api/sessions/{session_id}/racks/{rack_number}/products")
-async def delete_rack_products_api(session_id: int, rack_number: int):
-    """랙 번호는 유지, 안의 제품만 삭제"""
-    delete_rack_products(session_id, rack_number)
-    return JSONResponse({"success": True})
-
-@app.delete("/api/products/{product_id}")
-async def delete_product_api(product_id: int):
-    delete_products([product_id])
-    return JSONResponse({"success": True})
-
-@app.post("/api/products/move-rack")
-async def move_rack_api(
-    product_ids: List[int] = Form(...),
-    target_rack: int = Form(...),
-    session_id: int = Form(...)
+# ── 한번에 스캔 (여러 랙 묶음) ──
+@app.post("/api/scan/bulk")
+async def scan_bulk(
+    store: str = Form(...),
+    files: List[UploadFile] = File(...),
+    rack_names: List[str] = Form(...)  # 파일 순서와 동일
 ):
-    move_products_to_rack(product_ids, target_rack, session_id)
+    images = await read_images(files)
+
+    # 파일을 rack_name 순서대로 묶기
+    if len(rack_names) != len(images):
+        raise HTTPException(status_code=400, detail="파일 수와 랙 이름 수가 다릅니다")
+
+    # rack_name별로 그룹핑
+    rack_image_map: dict = {}
+    for img, rname in zip(images, rack_names):
+        if rname not in rack_image_map:
+            rack_image_map[rname] = []
+        rack_image_map[rname].append(img)
+
+    # 병렬 분석
+    async def analyze_one(rname, imgs):
+        rnum = RACK_MAP.get(rname, 99)
+        racks = await analyze_images_batch(imgs, start_rack_num=rnum, single_rack=True)
+        products = racks[0]["products"] if racks else []
+        return save_rack_scan(store, rname, products)
+
+    tasks = [analyze_one(rname, imgs) for rname, imgs in rack_image_map.items()]
+    results = await asyncio.gather(*tasks)
+
+    total_products = sum(r["products_count"] for r in results)
+    total_changes = sum(1 for r in results if r["changes"]["has_changes"])
+
+    return JSONResponse({
+        "store": store,
+        "rack_count": len(results),
+        "total_products": total_products,
+        "changed_racks": total_changes,
+        "racks": results,
+    })
+
+
+# ── 이어서 스캔 (단일 랙 추가) ──
+@app.post("/api/scan/append")
+async def scan_append(
+    store: str = Form(...),
+    rack_name: str = Form(...),
+    files: List[UploadFile] = File(...)
+):
+    return await scan_rack(store=store, rack_name=rack_name, files=files)
+
+
+# ============================================================
+# 조회 API
+# ============================================================
+
+# ── 매장 전체 현황 ──
+@app.get("/api/overview/{store}")
+async def overview(store: str):
+    data = get_store_overview(store)
+    return JSONResponse(data)
+
+# ── 최근 변동 이력 ──
+@app.get("/api/changes/{store}")
+async def changes(store: str, limit: int = 50):
+    data = get_recent_changes(store, limit)
+    return JSONResponse(data)
+
+# ── 특정 랙 이력 ──
+@app.get("/api/rack/{store}/{rack_name}/history")
+async def rack_history(store: str, rack_name: str):
+    data = get_rack_history(store, rack_name)
+    return JSONResponse(data)
+
+# ── SKU 검색 ──
+@app.get("/api/search/{store}")
+async def search(store: str, sku: str):
+    data = search_sku(store, sku)
+    return JSONResponse(data)
+
+
+# ============================================================
+# 관리 API
+# ============================================================
+
+# ── 랙 삭제 ──
+@app.delete("/api/rack/{store}/{rack_name}")
+async def delete_rack_api(store: str, rack_name: str):
+    delete_rack(store, rack_name)
     return JSONResponse({"success": True})
 
 
-# ── 엑셀 다운로드 ──
-@app.get("/api/sessions/{session_id}/excel")
-async def download_excel(session_id: int):
+# ============================================================
+# 엑셀 다운로드
+# ============================================================
+@app.get("/api/excel/{store}")
+async def download_excel(store: str):
     try:
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment
     except ImportError:
         raise HTTPException(status_code=500, detail="openpyxl 미설치")
 
-    detail = get_session_detail(session_id)
-    if not detail:
-        raise HTTPException(status_code=404, detail="세션 없음")
+    data = get_excel_data(store)
+    overview = data["overview"]
+    changes = data["changes"]
 
-    diff = compare_sessions(detail["store"], session_id)
     wb = openpyxl.Workbook()
 
     def style_header(ws, headers, color):
@@ -219,59 +199,47 @@ async def download_excel(session_id: int):
             cell.fill = PatternFill("solid", fgColor=color)
             cell.alignment = Alignment(horizontal="center")
 
-    # 시트1: 전체현황
+    store_label = {"gimhae": "김해", "jeonggwan": "정관"}.get(store, store)
+
+    # 시트1: 전체 현황
     ws1 = wb.active
-    ws1.title = "All"
-    style_header(ws1, ["Rack","SKU","Name","Price","Sale","Discount"], "FF4D00")
-    for rack in detail["racks"]:
+    ws1.title = "전체현황"
+    style_header(ws1, ["랙이름", "랙번호", "품번", "정가", "할인가", "할인율", "최근스캔"], "FF4D00")
+    for rack in overview["racks"]:
         for p in rack["products"]:
-            ws1.append([rack["rack_number"], p.get("sku",""), p.get("name",""),
-                        p.get("price",""), p.get("sale_price",""),
-                        f"{p['discount_rate']}%" if p.get("discount_rate") else ""])
+            ws1.append([
+                rack["rack_name"], rack["rack_number"],
+                p.get("sku", ""), p.get("price", ""),
+                p.get("sale_price", ""),
+                f"{p['discount_rate']}%" if p.get("discount_rate") else "",
+                rack["last_scanned_at"]
+            ])
 
-    # 시트2: 신규
-    ws2 = wb.create_sheet("Added")
-    style_header(ws2, ["Rack","SKU","Name","Price","Sale","Discount"], "39D353")
-    if diff.get("has_previous"):
-        for c in diff["changes"]:
-            if c["type"] == "added":
-                ws2.append([c["rack"], c["sku"], c.get("name",""),
-                            c.get("new_price",""), c.get("new_sale_price",""),
-                            f"{c['new_discount']}%" if c.get("new_discount") else ""])
+    # 시트2: 변동 이력
+    ws2 = wb.create_sheet("변동이력")
+    style_header(ws2, ["스캔일시", "랙이름", "신규", "삭제", "변동", "제품수"], "E3B341")
+    for h in changes:
+        ch = h.get("changes", {})
+        s = ch.get("summary", {})
+        ws2.append([
+            h["scanned_at"], h["rack_name"],
+            s.get("added", 0), s.get("removed", 0), s.get("changed", 0),
+            h["product_count"]
+        ])
 
-    # 시트3: 사라짐
-    ws3 = wb.create_sheet("Removed")
-    style_header(ws3, ["Rack","SKU","Name","OldPrice","OldSale","OldDiscount"], "F85149")
-    if diff.get("has_previous"):
-        for c in diff["changes"]:
-            if c["type"] == "removed":
-                ws3.append([c["rack"], c["sku"], c.get("name",""),
-                            c.get("old_price",""), c.get("old_sale_price",""),
-                            f"{c['old_discount']}%" if c.get("old_discount") else ""])
-
-    # 시트4: 가격변동
-    ws4 = wb.create_sheet("Changed")
-    style_header(ws4, ["Rack","SKU","Name","Field","Old","New"], "E3B341")
-    if diff.get("has_previous"):
-        fl = {"price":"Price","sale_price":"Sale","discount_rate":"Discount","rack":"Rack"}
-        for c in diff["changes"]:
-            if c["type"] == "changed":
-                for ch in c["changes"]:
-                    ws4.append([c["rack"], c["sku"], c.get("name",""),
-                                fl.get(ch["field"],ch["field"]), ch["old"], ch["new"]])
-
-    for ws in [ws1, ws2, ws3, ws4]:
+    # 열 너비 자동
+    for ws in [ws1, ws2]:
         for col in ws.columns:
-            w = max((len(str(cell.value or "")) for cell in col), default=0)
+            w = max((len(str(c.value or "")) for c in col), default=0)
             ws.column_dimensions[col[0].column_letter].width = max(12, w + 2)
 
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
 
-    store = detail["store"]
-    date = detail["scanned_at"][:10]
-    filename = f"rack_{store}_{date}.xlsx"
+    from urllib.parse import quote
+    date_str = __import__('datetime').datetime.now().strftime("%Y%m%d")
+    filename = f"rack_{store}_{date_str}.xlsx"
 
     return StreamingResponse(
         buf,

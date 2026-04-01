@@ -7,247 +7,151 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0a; --surface: #141414; --surface2: #1e1e1e; --border: #2a2a2a;
-    --accent: #ff4d00; --accent2: #ff8c42; --green: #39d353; --red: #f85149;
-    --yellow: #e3b341; --text: #e8e8e8; --muted: #666;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Noto Sans KR', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding-bottom: 80px; }
+  :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;--accent:#ff4d00;--accent2:#ff8c42;--green:#39d353;--red:#f85149;--yellow:#e3b341;--text:#e8e8e8;--muted:#666;--font-display:'Bebas Neue',sans-serif;--font-body:'Noto Sans KR',sans-serif;--font-mono:'JetBrains Mono',monospace;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;padding-bottom:80px;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--font-display);font-size:24px;letter-spacing:4px;}.logo span{color:var(--accent);}
+  .store-tabs{display:flex;gap:6px;}
+  .store-tab{padding:6px 14px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .store-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+  .container{max-width:900px;margin:0 auto;padding:20px 16px;}
 
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .logo { font-family: var(--font-display); font-size: 24px; letter-spacing: 4px; }
-  .logo span { color: var(--accent); }
-  .store-tabs { display: flex; gap: 6px; }
-  .store-tab { padding: 6px 14px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: var(--font-body); font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .store-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+  .mode-card{background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.2s;}
+  .mode-card.active{border-color:var(--accent);background:rgba(255,77,0,0.06);}
+  .mode-icon{font-size:28px;margin-bottom:6px;}
+  .mode-title{font-family:var(--font-display);font-size:15px;letter-spacing:2px;margin-bottom:3px;}
+  .mode-card.active .mode-title{color:var(--accent);}
+  .mode-desc{font-size:11px;color:var(--muted);line-height:1.5;}
 
-  .container { max-width: 700px; margin: 0 auto; padding: 20px 16px; }
+  /* 업로드 존 - 크게 */
+  .upload-zone{background:var(--surface);border:2px dashed var(--border);border-radius:12px;padding:52px 24px;text-align:center;cursor:pointer;position:relative;transition:all 0.3s;width:100%;}
+  .upload-zone.drag-over{border-color:var(--accent);background:rgba(255,77,0,0.05);transform:scale(1.01);}
+  .upload-zone.has-files{border-style:solid;border-color:var(--accent);}
+  .upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-icon{font-size:56px;margin-bottom:14px;display:block;}
+  .upload-title{font-family:var(--font-display);font-size:26px;letter-spacing:3px;margin-bottom:10px;}
+  .upload-sub{color:var(--muted);font-size:14px;line-height:1.8;}
+  .upload-sub em{color:var(--accent);font-style:normal;font-weight:700;}
 
-  /* MODE SELECTOR */
-  .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-  .mode-card { background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
-  .mode-card.active { border-color: var(--accent); background: rgba(255,77,0,0.06); }
-  .mode-icon { font-size: 26px; margin-bottom: 6px; }
-  .mode-title { font-family: var(--font-display); font-size: 14px; letter-spacing: 2px; margin-bottom: 3px; }
-  .mode-card.active .mode-title { color: var(--accent); }
-  .mode-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  /* 미리보기 */
+  .preview-section{display:none;margin-top:16px;}
+  .preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .preview-title{font-family:var(--font-display);font-size:16px;letter-spacing:2px;}
+  .preview-count{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .rack-groups{display:flex;flex-direction:column;gap:8px;}
+  .rack-group{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .rack-group-header{background:var(--surface2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+  .rack-group-label{font-family:var(--font-display);font-size:16px;letter-spacing:2px;color:var(--accent);}
+  .rack-group-count{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+  .btn-remove-rack{background:transparent;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:2px 8px;}
+  .rack-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:12px;}
+  .photo-thumb{aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--border);position:relative;}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;}
+  .photo-thumb .remove-btn{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+  .photo-thumb:hover .remove-btn{display:flex;}
+  .rack-drop-zone{border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:all 0.2s;position:relative;margin:0 12px 12px;}
+  .rack-drop-zone:hover,.rack-drop-zone.drag-over{border-color:var(--accent);color:var(--accent);}
+  .rack-drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .add-rack-btn{width:100%;padding:10px;background:transparent;border:1px dashed var(--border);border-radius:6px;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .add-rack-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .rack-summary{background:var(--surface2);border-radius:6px;padding:8px 14px;margin-top:8px;font-size:12px;color:var(--muted);font-family:var(--font-mono);}
 
-  /* MODE INFO */
-  .mode-info { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: var(--muted); line-height: 1.6; }
-  .mode-info strong { color: var(--text); }
+  .btn-analyze{width:100%;margin-top:16px;padding:20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:24px;letter-spacing:4px;cursor:pointer;transition:all 0.2s;display:none;align-items:center;justify-content:center;gap:8px;}
+  .btn-analyze:hover:not(:disabled){background:#ff6520;transform:translateY(-1px);}
+  .btn-analyze:disabled{background:var(--muted);cursor:not-allowed;transform:none;}
+  .btn-analyze.show{display:flex;}
 
-  /* 이어서 세션 상태 */
-  .session-bar { background: var(--surface); border: 1px solid var(--green); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: none; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-  .session-bar.show { display: flex; }
-  .session-badge { background: var(--green); color: #000; font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 3px; }
-  .session-stats { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .btn-finish { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 8px 14px; border-radius: 6px; font-family: var(--font-body); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-  .btn-finish:hover { background: var(--green); color: #000; }
+  .progress-section{display:none;margin-top:16px;}
+  .progress-bar-wrap{background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;margin:10px 0;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 0.4s;border-radius:4px;}
+  .progress-text{font-family:var(--font-mono);font-size:13px;color:var(--muted);}
 
-  /* 랙 번호 입력 */
-  .rack-input-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; display: none; align-items: center; gap: 12px; }
-  .rack-input-bar.show { display: flex; }
-  .rack-number-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 18px; font-weight: 700; width: 80px; outline: none; text-align: center; }
-  .rack-number-input:focus { border-color: var(--accent); }
+  .result-box{display:none;background:var(--surface);border:1px solid var(--green);border-radius:8px;padding:18px;margin-top:16px;}
+  .result-box.show{display:block;}
+  .result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .result-row:last-child{border-bottom:none;}
+  .result-label{color:var(--muted);}
+  .result-val{font-family:var(--font-mono);font-weight:700;}
+  .diff-pills{display:flex;gap:6px;flex-wrap:wrap;}
+  .diff-pill{font-size:11px;font-family:var(--font-mono);font-weight:700;padding:3px 10px;border-radius:20px;}
+  .pill-g{background:rgba(57,211,83,0.15);color:var(--green);}
+  .pill-r{background:rgba(248,81,73,0.15);color:var(--red);}
+  .pill-y{background:rgba(227,179,65,0.15);color:var(--yellow);}
 
-  /* UPLOAD ZONE */
-  .upload-zone { background: var(--surface); border: 2px dashed var(--border); border-radius: 12px; padding: 28px 20px; text-align: center; cursor: pointer; position: relative; transition: all 0.3s; }
-  .upload-zone.drag-over { border-color: var(--accent); background: rgba(255,77,0,0.05); }
-  .upload-zone.has-files { border-style: solid; border-color: var(--accent); }
-  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .upload-icon { font-size: 40px; margin-bottom: 10px; display: block; }
-  .upload-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 3px; margin-bottom: 6px; }
-  .upload-sub { color: var(--muted); font-size: 13px; line-height: 1.6; }
-
-  /* PREVIEW WITH RACK DIVIDERS */
-  .preview-section { display: none; margin-top: 14px; }
-  .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .preview-title { font-family: var(--font-display); font-size: 15px; letter-spacing: 2px; }
-  .preview-count { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-
-  /* 랙 구분 컨테이너 */
-  .rack-groups { display: flex; flex-direction: column; gap: 0; }
-
-  .rack-group { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
-  .rack-group-header { background: var(--surface2); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; }
-  .rack-group-label { font-family: var(--font-display); font-size: 15px; letter-spacing: 2px; color: var(--accent); }
-  .rack-group-count { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-  .btn-remove-rack { background: transparent; border: none; color: var(--red); font-size: 14px; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
-  .btn-remove-rack:hover { background: rgba(248,81,73,0.15); }
-
-  .rack-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; padding: 10px; }
-  .photo-thumb { aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); position: relative; cursor: pointer; }
-  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-thumb .remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: none; align-items: center; justify-content: center; }
-  .photo-thumb:hover .remove-btn { display: flex; }
-
-  /* 랙 구분 추가 버튼 */
-  .add-rack-divider { width: 100%; padding: 8px; background: transparent; border: 1px dashed var(--border); border-radius: 6px; color: var(--muted); font-family: var(--font-body); font-size: 12px; cursor: pointer; transition: all 0.2s; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-  .add-rack-divider:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* 랙 구분 요약 */
-  .rack-summary { background: var(--surface2); border-radius: 6px; padding: 10px 14px; margin-top: 8px; margin-bottom: 4px; font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
-
-  /* 분석 버튼 */
-  .btn-analyze { width: 100%; margin-top: 14px; padding: 18px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: var(--font-display); font-size: 22px; letter-spacing: 4px; cursor: pointer; transition: all 0.2s; display: none; align-items: center; justify-content: center; gap: 8px; }
-  .btn-analyze:hover:not(:disabled) { background: #ff6520; transform: translateY(-1px); }
-  .btn-analyze:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
-  .btn-analyze.show { display: flex; }
-
-  /* PROGRESS */
-  .progress-section { display: none; margin-top: 16px; }
-  .progress-bar-wrap { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; margin: 10px 0; }
-  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.4s ease; border-radius: 4px; }
-  .progress-text { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
-
-  /* RESULT */
-  .result-box { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
-  .result-box.show { display: block; }
-  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .result-row:last-child { border-bottom: none; }
-  .result-label { color: var(--muted); }
-  .result-val { font-family: var(--font-mono); font-weight: 700; }
-  .diff-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-  .diff-pill { font-size: 11px; font-family: var(--font-mono); font-weight: 700; padding: 3px 10px; border-radius: 20px; }
-  .pill-g { background: rgba(57,211,83,0.15); color: var(--green); }
-  .pill-r { background: rgba(248,81,73,0.15); color: var(--red); }
-  .pill-y { background: rgba(227,179,65,0.15); color: var(--yellow); }
-
-  /* BOTTOM NAV */
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
-  .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; text-decoration: none; color: var(--muted); font-size: 11px; transition: color 0.2s; gap: 3px; }
-  .bottom-nav a.active { color: var(--accent); }
-  .nav-icon { font-size: 20px; }
-
-  #toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 22px; font-size: 14px; transition: transform 0.3s; z-index: 999; white-space: nowrap; }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.error { border-color: var(--red); }
-  #toast.success { border-color: var(--green); }
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:500;padding-bottom:env(safe-area-inset-bottom);}
+  .bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0;text-decoration:none;color:var(--muted);font-size:11px;transition:color 0.2s;gap:3px;}
+  .bottom-nav a.active{color:var(--accent);}
+  .nav-icon{font-size:20px;}
+  #toast{position:fixed;bottom:75px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 22px;font-size:14px;transition:transform 0.3s;z-index:400;white-space:nowrap;pointer-events:none;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.error{border-color:var(--red);}
+  #toast.success{border-color:var(--green);}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">RACK<span>.</span>MONITOR</div>
   <div class="store-tabs">
-    <button class="store-tab active" onclick="selectStore('gimhae', this)">김해</button>
-    <button class="store-tab" onclick="selectStore('jeonggwan', this)">정관</button>
+    <button class="store-tab active" onclick="selectStore('gimhae',this)">김해</button>
+    <button class="store-tab" onclick="selectStore('jeonggwan',this)">정관</button>
   </div>
 </header>
 
 <div class="container">
-
-  <!-- 모드 선택 -->
   <div class="mode-grid">
-    <div class="mode-card active" onclick="selectMode('all', this)">
+    <div class="mode-card active" onclick="selectMode('all',this)">
       <div class="mode-icon">📦</div>
       <div class="mode-title">한번에</div>
-      <div class="mode-desc">전체 사진<br>한 번에 업로드</div>
+      <div class="mode-desc">전체 사진을<br>한 번에 업로드</div>
     </div>
-    <div class="mode-card" onclick="selectMode('append', this)">
+    <div class="mode-card" onclick="selectMode('append',this)">
       <div class="mode-icon">➕</div>
       <div class="mode-title">이어서</div>
-      <div class="mode-desc">나눠서<br>같은 세션에 추가</div>
-    </div>
-    <div class="mode-card" onclick="selectMode('rack', this)">
-      <div class="mode-icon">🔢</div>
-      <div class="mode-title">랙별</div>
-      <div class="mode-desc">특정 랙만<br>선택해서 교체</div>
+      <div class="mode-desc">나눠서 올려도<br>자동으로 이어짐</div>
     </div>
   </div>
 
-  <!-- 모드 안내 -->
-  <div class="mode-info" id="mode-info">
-    사진 선택 후 <strong>랙 구분 추가</strong> 버튼으로 랙을 직접 나누세요. 암전 사진 없이도 됩니다.
-  </div>
-
-  <!-- 이어서 모드 세션 상태 -->
-  <div class="session-bar" id="session-bar">
-    <div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:var(--muted)">진행중 세션</span>
-        <span class="session-badge" id="session-badge">#0</span>
-      </div>
-      <div class="session-stats" id="session-stats">랙 0개 · 제품 0개</div>
-    </div>
-    <button class="btn-finish" onclick="finishSession()">✅ 스캔 완료</button>
-  </div>
-
-  <!-- 랙별 모드 랙 번호 입력 -->
-  <div class="rack-input-bar" id="rack-input-bar">
-    <span style="font-size:13px;color:var(--muted)">교체할 랙 번호:</span>
-    <input type="number" class="rack-number-input" id="rack-number-input" value="1" min="1" max="99">
-    <span style="font-size:13px;color:var(--muted)">번 랙</span>
-  </div>
-
-  <!-- 업로드 존 -->
   <div class="upload-zone" id="upload-zone">
     <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
     <span class="upload-icon">📸</span>
     <div class="upload-title">사진 업로드</div>
-    <div class="upload-sub" id="upload-sub">사진을 선택하거나 드래그하세요</div>
+    <div class="upload-sub">클릭하거나 <em>드래그앤드롭</em>으로 사진을 올리세요<br>여러 장 동시 선택 가능</div>
   </div>
 
-  <!-- 미리보기 + 랙 구분 -->
   <div class="preview-section" id="preview-section">
     <div class="preview-header">
       <div class="preview-title">랙 구성</div>
       <span class="preview-count" id="preview-count">0장</span>
     </div>
-
-    <!-- 랙 그룹 목록 -->
     <div class="rack-groups" id="rack-groups"></div>
-
-    <!-- 랙 구분 추가 버튼 (한번에/이어서 모드만) -->
-    <button class="add-rack-divider" id="btn-add-divider" onclick="addRackDivider()">
-      ＋ 랙 구분 추가 (새 랙 시작)
-    </button>
-
-    <!-- 랙 요약 -->
+    <button class="add-rack-btn" onclick="addRackGroup()">＋ 랙 구분 추가</button>
     <div class="rack-summary" id="rack-summary"></div>
   </div>
 
-  <!-- 분석 버튼 -->
-  <button class="btn-analyze" id="btn-analyze" onclick="submitScan()">
-    🔍 AI 분석 시작
-  </button>
+  <button class="btn-analyze" id="btn-analyze" onclick="submitScan()">🔍 AI 분석 시작</button>
 
-  <!-- 진행 -->
   <div class="progress-section" id="progress-section">
     <div class="progress-text" id="progress-text">분석 중...</div>
     <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
   </div>
 
-  <!-- 결과 -->
   <div class="result-box" id="result-box"></div>
-
 </div>
 
 <nav class="bottom-nav">
   <a href="/" class="active"><span class="nav-icon">📸</span><span>스캔</span></a>
+  <a href="/floorplan"><span class="nav-icon">🗺️</span><span>랙별등록</span></a>
   <a href="/dashboard"><span class="nav-icon">📊</span><span>대시보드</span></a>
 </nav>
-
 <div id="toast"></div>
 
 <script>
 let selectedStore = 'gimhae';
 let selectedMode = 'all';
-let currentSessionId = null;
-
-// rackGroups: [{files: [File, ...], rackNum: 1}, ...]
 let rackGroups = [];
-
-const STORE_LABELS = { gimhae: '김해', jeonggwan: '정관' };
-const MODE_INFO = {
-  all: '사진 선택 후 <strong>랙 구분 추가</strong> 버튼으로 랙을 직접 나누세요. 암전 사진 없이도 됩니다.',
-  append: '나눠서 올려도 같은 세션에 이어서 누적됩니다. 첫 업로드 시 세션이 자동 시작됩니다.',
-  rack: '교체할 랙 번호를 입력하고 해당 랙 사진만 올리세요.'
-};
+let appendRackOffset = 0; // 이어서 모드에서 랙 번호 오프셋
 
 function selectStore(store, el) {
   selectedStore = store;
@@ -259,274 +163,141 @@ function selectMode(mode, el) {
   selectedMode = mode;
   document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('mode-info').innerHTML = MODE_INFO[mode];
-  document.getElementById('rack-input-bar').className = 'rack-input-bar' + (mode === 'rack' ? ' show' : '');
-  document.getElementById('btn-add-divider').style.display = mode === 'rack' ? 'none' : 'flex';
-  if (selectedMode !== 'append') {
-    document.getElementById('session-bar').classList.remove('show');
-  }
   resetFiles();
 }
 
-// ── 파일 선택 ──
 function handleFiles(files) {
   const newFiles = Array.from(files);
   if (!newFiles.length) return;
-
+  const startNum = rackGroups.length === 0 ? (1 + appendRackOffset) : rackGroups[rackGroups.length-1].rackNum;
   if (rackGroups.length === 0) {
-    // 첫 업로드 - 랙 1 자동 생성
-    rackGroups = [{ files: newFiles, rackNum: 1 }];
+    rackGroups = [{ rackNum: startNum, files: newFiles }];
   } else {
-    // 마지막 랙에 추가
-    rackGroups[rackGroups.length - 1].files.push(...newFiles);
+    rackGroups[rackGroups.length-1].files.push(...newFiles);
   }
-
   document.getElementById('upload-zone').classList.add('has-files');
   renderPreview();
   document.getElementById('btn-analyze').classList.add('show');
   document.getElementById('file-input').value = '';
 }
 
-// 드래그앤드롭
-const zone = document.getElementById('upload-zone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+function setupDrop(el, onDrop) {
+  el.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over'); });
+  el.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); el.classList.remove('drag-over'); onDrop(e.dataTransfer.files); });
+}
+setupDrop(document.getElementById('upload-zone'), handleFiles);
 
-// ── 랙 구분 추가 ──
-function addRackDivider() {
-  if (rackGroups.length === 0) {
-    showToast('먼저 사진을 선택하세요', 'error');
-    return;
-  }
-  const lastRack = rackGroups[rackGroups.length - 1];
-  if (lastRack.files.length === 0) {
-    showToast('현재 랙에 사진이 없습니다', 'error');
-    return;
-  }
-  const nextRackNum = lastRack.rackNum + 1;
-  rackGroups.push({ files: [], rackNum: nextRackNum });
+function addRackGroup() {
+  if (!rackGroups.length) { showToast('먼저 사진을 선택하세요', 'error'); return; }
+  if (!rackGroups[rackGroups.length-1].files.length) { showToast('현재 랙에 사진이 없습니다', 'error'); return; }
+  const next = rackGroups[rackGroups.length-1].rackNum + 1;
+  rackGroups.push({ rackNum: next, files: [] });
   renderPreview();
-  showToast(`✅ RACK ${nextRackNum} 추가됨`, 'success');
+  showToast(`✅ RACK ${next} 추가됨`, 'success');
 }
 
-// ── 랙 삭제 ──
-function removeRack(rackIndex) {
-  if (rackGroups.length <= 1) {
-    showToast('마지막 랙은 삭제할 수 없습니다', 'error');
-    return;
-  }
-  rackGroups.splice(rackIndex, 1);
-  // 랙 번호 재정렬
-  rackGroups.forEach((g, i) => g.rackNum = i + 1);
+function removeRack(idx) {
+  if (rackGroups.length <= 1) { showToast('마지막 랙은 삭제할 수 없습니다', 'error'); return; }
+  rackGroups.splice(idx, 1);
+  rackGroups.forEach((g,i) => g.rackNum = i + 1 + appendRackOffset);
   renderPreview();
 }
 
-// ── 사진 삭제 ──
-function removePhoto(rackIndex, photoIndex) {
-  rackGroups[rackIndex].files.splice(photoIndex, 1);
-  if (rackGroups[rackIndex].files.length === 0 && rackGroups.length > 1) {
-    rackGroups.splice(rackIndex, 1);
-    rackGroups.forEach((g, i) => g.rackNum = i + 1);
+function removePhoto(ri, pi) {
+  rackGroups[ri].files.splice(pi, 1);
+  if (!rackGroups[ri].files.length && rackGroups.length > 1) {
+    rackGroups.splice(ri, 1);
+    rackGroups.forEach((g,i) => g.rackNum = i + 1 + appendRackOffset);
   }
-  if (rackGroups.length === 0 || rackGroups.every(g => g.files.length === 0)) {
-    resetFiles();
-    return;
-  }
+  if (!rackGroups.length || rackGroups.every(g=>!g.files.length)) { resetFiles(); return; }
   renderPreview();
 }
 
-// ── 미리보기 렌더링 ──
+function addToRack(ri, files) {
+  rackGroups[ri].files.push(...Array.from(files));
+  renderPreview();
+}
+
 function renderPreview() {
-  const section = document.getElementById('preview-section');
+  const total = rackGroups.reduce((a,g)=>a+g.files.length, 0);
+  document.getElementById('preview-section').style.display = 'block';
+  document.getElementById('preview-count').textContent = `${total}장 / ${rackGroups.length}개 랙`;
   const groupsEl = document.getElementById('rack-groups');
-  const totalPhotos = rackGroups.reduce((a, g) => a + g.files.length, 0);
-
-  section.style.display = 'block';
-  document.getElementById('preview-count').textContent = `${totalPhotos}장 / ${rackGroups.length}개 랙`;
-
   groupsEl.innerHTML = '';
-
-  rackGroups.forEach((group, rackIdx) => {
+  rackGroups.forEach((group, ri) => {
     const groupEl = document.createElement('div');
     groupEl.className = 'rack-group';
-
     const header = document.createElement('div');
     header.className = 'rack-group-header';
-    header.innerHTML = `
-      <span class="rack-group-label">RACK ${group.rackNum}</span>
+    header.innerHTML = `<span class="rack-group-label">RACK ${group.rackNum}</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="rack-group-count">${group.files.length}장</span>
-        ${rackGroups.length > 1 ? `<button class="btn-remove-rack" onclick="removeRack(${rackIdx})">✕ 삭제</button>` : ''}
+        ${rackGroups.length > 1 ? `<button class="btn-remove-rack" onclick="removeRack(${ri})">✕</button>` : ''}
       </div>`;
     groupEl.appendChild(header);
-
     const photosEl = document.createElement('div');
     photosEl.className = 'rack-photos';
-
-    group.files.forEach((file, photoIdx) => {
+    group.files.forEach((file, pi) => {
       const thumb = document.createElement('div');
       thumb.className = 'photo-thumb';
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-btn';
-      removeBtn.textContent = '✕';
-      removeBtn.onclick = (e) => { e.stopPropagation(); removePhoto(rackIdx, photoIdx); };
-      thumb.appendChild(removeBtn);
-
+      const rb = document.createElement('button');
+      rb.className = 'remove-btn'; rb.textContent = '✕';
+      rb.onclick = e => { e.stopPropagation(); removePhoto(ri, pi); };
+      thumb.appendChild(rb);
       const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        thumb.insertBefore(img, removeBtn);
-      };
+      reader.onload = e => { const img = document.createElement('img'); img.src = e.target.result; thumb.insertBefore(img, rb); };
       reader.readAsDataURL(file);
       photosEl.appendChild(thumb);
     });
-
-    // 이 랙에 사진 추가 버튼
-    const addBtn = document.createElement('label');
-    addBtn.style.cssText = 'aspect-ratio:1;border-radius:6px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:20px;';
-    addBtn.innerHTML = `+<input type="file" multiple accept="image/*" style="display:none" onchange="addToRack(${rackIdx}, this.files)">`;
-    photosEl.appendChild(addBtn);
-
+    const dz = document.createElement('div');
+    dz.className = 'rack-drop-zone';
+    dz.innerHTML = `📎 이 랙에 사진 추가<input type="file" multiple accept="image/*" onchange="addToRack(${ri}, this.files)">`;
+    setupDrop(dz, files => addToRack(ri, files));
+    photosEl.appendChild(dz);
     groupEl.appendChild(photosEl);
     groupsEl.appendChild(groupEl);
   });
-
-  // 요약
-  const summaryParts = rackGroups.map(g => `RACK${g.rackNum}: ${g.files.length}장`);
-  document.getElementById('rack-summary').textContent = summaryParts.join('  |  ');
+  document.getElementById('rack-summary').textContent = rackGroups.map(g=>`RACK${g.rackNum}:${g.files.length}장`).join(' | ');
 }
 
-// 특정 랙에 사진 추가
-function addToRack(rackIdx, files) {
-  rackGroups[rackIdx].files.push(...Array.from(files));
-  renderPreview();
-}
-
-// ── 통합 분석 버튼 ──
 async function submitScan() {
-  const totalPhotos = rackGroups.reduce((a, g) => a + g.files.length, 0);
-  if (totalPhotos === 0) return;
-
-  if (selectedMode === 'all') {
-    await submitAll();
-  } else if (selectedMode === 'append') {
-    if (!currentSessionId) await startSession();
-    await submitAppend();
-  } else if (selectedMode === 'rack') {
-    if (!currentSessionId) {
-      showToast('💡 이어서 모드에서 먼저 세션을 시작하세요', '');
-      return;
-    }
-    await submitRack();
-  }
-}
-
-// FormData 생성 — 랙 구분 정보 포함
-function buildFormWithRacks(store) {
-  const form = new FormData();
-  if (store) form.append('store', store);
-  // 각 파일에 랙 번호 메타데이터 추가
-  rackGroups.forEach(group => {
-    group.files.forEach(file => {
-      form.append('files', file);
-      form.append('rack_map', group.rackNum);
-    });
-  });
-  return form;
-}
-
-// ── 모드 1: 한번에 ──
-async function submitAll() {
-  const totalPhotos = rackGroups.reduce((a, g) => a + g.files.length, 0);
-  startProgress(totalPhotos);
-  setLoading(true);
-  try {
-    const form = buildFormWithRacks(selectedStore);
-    const res = await fetch('/api/scan/with-racks', { method: 'POST', body: form });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    stopProgress();
-    showResult({ racks: data.rack_count, products: data.product_count, diff: data.diff, label: '한번에 스캔 완료' });
-    resetFiles();
-  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
-  setLoading(false);
-}
-
-// ── 모드 2: 세션 자동 시작 ──
-async function startSession() {
-  const form = new FormData();
-  form.append('store', selectedStore);
-  const res = await fetch('/api/scan/start', { method: 'POST', body: form });
-  const data = await res.json();
-  currentSessionId = data.session_id;
-  document.getElementById('session-badge').textContent = '#' + currentSessionId;
-  document.getElementById('session-stats').textContent = '랙 0개 · 제품 0개';
-  document.getElementById('session-bar').classList.add('show');
-}
-
-// ── 모드 2: 이어서 추가 ──
-async function submitAppend() {
-  const totalPhotos = rackGroups.reduce((a, g) => a + g.files.length, 0);
-  startProgress(totalPhotos);
-  setLoading(true);
-  try {
-    const form = buildFormWithRacks(null);
-    const res = await fetch(`/api/scan/append-with-racks/${currentSessionId}`, { method: 'POST', body: form });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    stopProgress();
-    document.getElementById('session-stats').textContent = `랙 ${data.total_racks}개 · 제품 ${data.total_products}개`;
-    showToast(`✅ RACK ${data.added_racks}개 추가 — 누적 ${data.total_racks}개 랙`, 'success');
-    resetFiles();
-  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
-  setLoading(false);
-}
-
-// ── 모드 2: 스캔 완료 ──
-async function finishSession() {
-  if (!currentSessionId) return;
-  try {
-    const res = await fetch(`/api/scan/finish/${currentSessionId}`, { method: 'POST' });
-    const data = await res.json();
-    showResult({ racks: data.total_racks, products: data.total_products, diff: data.diff, label: '이어서 스캔 완료' });
-    currentSessionId = null;
-    document.getElementById('session-bar').classList.remove('show');
-  } catch(e) { showToast('❌ 완료 처리 실패', 'error'); }
-}
-
-// ── 모드 3: 랙별 ──
-async function submitRack() {
-  const rackNum = parseInt(document.getElementById('rack-number-input').value);
-  if (!rackNum || rackNum < 1) { showToast('랙 번호를 입력하세요', 'error'); return; }
-  const totalPhotos = rackGroups.reduce((a, g) => a + g.files.length, 0);
-  startProgress(totalPhotos);
-  setLoading(true);
+  const total = rackGroups.reduce((a,g)=>a+g.files.length, 0);
+  if (!total) return;
+  startProgress(total); setLoading(true);
   try {
     const form = new FormData();
-    form.append('rack_number', rackNum);
-    rackGroups.forEach(g => g.files.forEach(f => form.append('files', f)));
-    const res = await fetch(`/api/scan/rack/${currentSessionId}`, { method: 'POST', body: form });
+    form.append('store', selectedStore);
+    rackGroups.forEach(g => g.files.forEach(f => { form.append('files', f); form.append('rack_map', g.rackNum); }));
+    const res = await fetch('/api/scan/bulk', { method:'POST', body:form });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     stopProgress();
-    showToast(`✅ RACK ${rackNum} 교체 완료 — ${data.products_count}개 제품`, 'success');
-    document.getElementById('rack-number-input').value = rackNum + 1;
+
+    // 이어서 모드면 다음 업로드 랙 번호 이어서
+    if (selectedMode === 'append') {
+      appendRackOffset += rackGroups.length;
+    }
+
+    // 결과 표시
+    const totalChanges = data.total_changes;
+    let diffHtml = totalChanges > 0
+      ? `<div class="result-row"><span class="result-label">변동 감지</span><span class="result-val" style="color:var(--yellow)">${totalChanges}건</span></div>`
+      : '';
+    showResult({ racks: data.rack_count, products: data.total_products, diffHtml, label: selectedMode==='append'?'이어서 스캔':'한번에 스캔' });
     resetFiles();
-  } catch(e) { stopProgress(); showToast('❌ ' + e.message, 'error'); }
+  } catch(e) { stopProgress(); showToast('❌ '+e.message, 'error'); }
   setLoading(false);
 }
 
-// ── 헬퍼 ──
 let fakeTimer = null;
 function startProgress(total) {
   document.getElementById('progress-section').style.display = 'block';
   document.getElementById('result-box').classList.remove('show');
   let fake = 0;
   fakeTimer = setInterval(() => {
-    fake = Math.min(fake + Math.random() * 6, 88);
-    document.getElementById('progress-bar').style.width = fake + '%';
+    fake = Math.min(fake+Math.random()*6, 88);
+    document.getElementById('progress-bar').style.width = fake+'%';
     document.getElementById('progress-text').textContent = `${Math.floor(fake/100*total)}/${total}장 분석 중...`;
   }, 600);
 }
@@ -536,24 +307,16 @@ function stopProgress() {
   document.getElementById('progress-text').textContent = '✅ 완료!';
   setTimeout(() => { document.getElementById('progress-section').style.display = 'none'; }, 800);
 }
-function showResult({ racks, products, diff, label }) {
+function showResult({racks, products, diffHtml, label}) {
   const box = document.getElementById('result-box');
-  let diffHtml = '';
-  if (diff && diff.has_previous) {
-    const s = diff.summary;
-    diffHtml = `<div class="result-row"><span class="result-label">이전 스캔 비교</span>
-      <div class="diff-pills">
-        <span class="diff-pill pill-g">+${s.added} 신규</span>
-        <span class="diff-pill pill-r">-${s.removed} 제거</span>
-        <span class="diff-pill pill-y">~${s.changed} 변동</span>
-      </div></div>`;
-  }
   box.innerHTML = `
-    <div class="result-row"><span class="result-label">${label}</span><span class="result-val" style="color:var(--green)">✅ 완료</span></div>
-    <div class="result-row"><span class="result-label">랙 수</span><span class="result-val">${racks}개</span></div>
+    <div class="result-row"><span class="result-label">${label} 완료</span><span class="result-val" style="color:var(--green)">✅</span></div>
+    <div class="result-row"><span class="result-label">처리 랙</span><span class="result-val">${racks}개</span></div>
     <div class="result-row"><span class="result-label">제품 수</span><span class="result-val">${products}개</span></div>
     ${diffHtml}
-    <div style="margin-top:12px"><a href="/dashboard" style="color:var(--accent);font-size:13px;text-decoration:none">📊 대시보드 확인하기 →</a></div>`;
+    <div style="margin-top:14px">
+      <a href="/dashboard" style="display:block;text-align:center;padding:12px;background:rgba(255,77,0,0.1);border:1px solid var(--accent);border-radius:6px;color:var(--accent);text-decoration:none;font-size:14px">📊 대시보드 확인하기 →</a>
+    </div>`;
   box.classList.add('show');
 }
 function resetFiles() {
@@ -562,16 +325,12 @@ function resetFiles() {
   document.getElementById('file-input').value = '';
   document.getElementById('upload-zone').classList.remove('has-files');
   document.getElementById('btn-analyze').classList.remove('show');
-  document.getElementById('result-box').classList.remove('show');
 }
-function setLoading(on) {
-  document.getElementById('btn-analyze').disabled = on;
-}
-function showToast(msg, type = '') {
+function setLoading(on) { document.getElementById('btn-analyze').disabled = on; }
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = type;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  t.textContent = msg; t.className = type; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 </script>
 </body>
