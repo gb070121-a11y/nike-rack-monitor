@@ -309,8 +309,8 @@ function buildFloorplan(store) {
       const unit = document.createElement('div');
       unit.className = 'double-unit';
       unit.innerHTML = `
-        <div class="rack rack-a rack-idle" id="rack-${nameA}" onclick="selectRack('${nameA}')">${s.num} 양면 A</div>
-        <div class="rack rack-b rack-idle" id="rack-${nameB}" onclick="selectRack('${nameB}')">${s.num} 양면 B</div>`;
+        <div class="rack rack-a rack-idle" id="rack-${nameA}" onclick="selectRack('${nameA}')"><span style="color:#39d353">${s.num} 양면 &nbsp;</span><span style="color:#e3b341;font-size:14px;font-weight:900">A</span></div>
+        <div class="rack rack-b rack-idle" id="rack-${nameB}" onclick="selectRack('${nameB}')"><span style="color:#39d353">${s.num} 양면 &nbsp;</span><span style="color:#f85149;font-size:14px;font-weight:900">B</span></div>`;
       left.appendChild(unit);
     } else if (s.type === 'mid') {
       const wrap = document.createElement('div');
