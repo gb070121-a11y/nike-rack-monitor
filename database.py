@@ -24,7 +24,8 @@ def init_db():
 # ============================================================
 # RACK_MAP: 랙 이름 → 번호 매핑
 # ============================================================
-RACK_MAP = {
+# 김해 랙 맵
+RACK_MAP_GIMHAE = {
     "왼_벽랙": 1, "뒷_벽랙": 2, "오른_벽랙": 3,
     "1_양면A": 4,  "1_양면B": 5,
     "2_양면A": 6,  "2_양면B": 7,
@@ -44,6 +45,34 @@ RACK_MAP = {
     "14_양면A": 32,"14_양면B": 33,
     "15_양면A": 34,"15_양면B": 35,
 }
+
+# 정관 랙 맵
+RACK_MAP_JEONGGWAN = {
+    "왼_벽랙": 1, "뒷_벽랙": 2, "오른_벽랙": 3,
+    "1_양면A": 4,  "1_양면B": 5,
+    "2_양면A": 6,  "2_양면B": 7,
+    "3_양면A": 8,  "3_양면B": 9,
+    "4_양면A": 10, "4_양면B": 11,
+    "중간A_랙": 12,
+    "5_양면A": 13, "5_양면B": 14,
+    "6_양면A": 15, "6_양면B": 16,
+    "7_양면A": 17, "7_양면B": 18,
+    "8_양면A": 19, "8_양면B": 20,
+    "중간B_랙": 21,
+    "9_양면A": 22, "9_양면B": 23,
+    "10_양면A": 24,"10_양면B": 25,
+    "11_양면A": 26,"11_양면B": 27,
+    "12_양면A": 28,"12_양면B": 29,
+    "13_양면A": 30,"13_양면B": 31,
+    "14_양면A": 32,"14_양면B": 33,
+}
+
+# 통합 맵 (하위호환)
+RACK_MAP = {**RACK_MAP_GIMHAE, **RACK_MAP_JEONGGWAN}
+
+def get_rack_number(store: str, rack_name: str) -> int:
+    m = RACK_MAP_JEONGGWAN if store == "jeonggwan" else RACK_MAP_GIMHAE
+    return m.get(rack_name, 99)
 
 
 # ============================================================
@@ -89,7 +118,7 @@ def detect_changes(old_products: list, new_products: list) -> dict:
 # ============================================================
 def save_rack_scan(store: str, rack_name: str, products: list) -> dict:
     db = get_client()
-    rack_number = RACK_MAP.get(rack_name, 99)
+    rack_number = get_rack_number(store, rack_name)
     scanned_at = now()
 
     # 기존 데이터 조회

@@ -246,3 +246,189 @@ async def download_excel(store: str):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+
+# ============================================================
+# 전체 매장 통합 검색 + 중복 분석
+# ============================================================
+
+@app.get("/api/search/all")
+async def search_all_stores(sku: str):
+    """김해 + 정관 동시 SKU 검색"""
+    from database import search_sku
+    gimhae = search_sku("gimhae", sku)
+    jeonggwan = search_sku("jeonggwan", sku)
+    return JSONResponse({
+        "sku": sku,
+        "gimhae": gimhae,
+        "jeonggwan": jeonggwan,
+        "total": len(gimhae) + len(jeonggwan)
+    })
+
+
+@app.get("/api/analysis/overlap")
+async def overlap_analysis():
+    """김해 + 정관 품번 중복/단독 분석"""
+    from database import get_store_overview
+
+    gimhae_data = get_store_overview("gimhae")
+    jeonggwan_data = get_store_overview("jeonggwan")
+
+    # SKU 맵 생성
+    def build_sku_map(overview):
+        sku_map = {}
+        for rack in overview["racks"]:
+            for p in rack["products"]:
+                sku = p.get("sku", "").strip()
+                if not sku:
+                    continue
+                if sku not in sku_map:
+                    sku_map[sku] = []
+                sku_map[sku].append({
+                    "rack_name": rack["rack_name"],
+                    "price": p.get("price"),
+                    "sale_price": p.get("sale_price"),
+                    "discount_rate": p.get("discount_rate"),
+                    "name": p.get("name", ""),
+                })
+        return sku_map
+
+    gimhae_map = build_sku_map(gimhae_data)
+    jeonggwan_map = build_sku_map(jeonggwan_data)
+
+    all_skus = set(gimhae_map.keys()) | set(jeonggwan_map.keys())
+
+    gimhae_only, jeonggwan_only, both = [], [], []
+
+    for sku in sorted(all_skus):
+        in_g = sku in gimhae_map
+        in_j = sku in jeonggwan_map
+        entry = {
+            "sku": sku,
+            "gimhae": gimhae_map.get(sku, []),
+            "jeonggwan": jeonggwan_map.get(sku, []),
+        }
+        if in_g and in_j:
+            # 가격 차이 계산
+            g_price = gimhae_map[sku][0].get("sale_price") or gimhae_map[sku][0].get("price")
+            j_price = jeonggwan_map[sku][0].get("sale_price") or jeonggwan_map[sku][0].get("price")
+            try:
+                entry["price_diff"] = int(j_price or 0) - int(g_price or 0)
+            except:
+                entry["price_diff"] = 0
+            both.append(entry)
+        elif in_g:
+            gimhae_only.append(entry)
+        else:
+            jeonggwan_only.append(entry)
+
+    return JSONResponse({
+        "summary": {
+            "gimhae_only": len(gimhae_only),
+            "jeonggwan_only": len(jeonggwan_only),
+            "both": len(both),
+            "total_unique": len(all_skus),
+        },
+        "gimhae_only": gimhae_only,
+        "jeonggwan_only": jeonggwan_only,
+        "both": both,
+    })
+
+
+@app.get("/api/analysis/overlap/excel")
+async def overlap_excel():
+    """중복 분석 엑셀 다운로드"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        raise HTTPException(status_code=500, detail="openpyxl 미설치")
+
+    from database import get_store_overview
+
+    def build_sku_map(overview):
+        sku_map = {}
+        for rack in overview["racks"]:
+            for p in rack["products"]:
+                sku = p.get("sku", "").strip()
+                if not sku:
+                    continue
+                sku_map.setdefault(sku, []).append({
+                    "rack_name": rack["rack_name"],
+                    "price": p.get("price", ""),
+                    "sale_price": p.get("sale_price", ""),
+                    "discount_rate": p.get("discount_rate", ""),
+                })
+        return sku_map
+
+    g_map = build_sku_map(get_store_overview("gimhae"))
+    j_map = build_sku_map(get_store_overview("jeonggwan"))
+    all_skus = sorted(set(g_map.keys()) | set(j_map.keys()))
+
+    wb = openpyxl.Workbook()
+
+    def hdr(ws, cols, color):
+        for i, c in enumerate(cols, 1):
+            cell = ws.cell(row=1, column=i, value=c)
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor=color)
+            cell.alignment = Alignment(horizontal="center")
+
+    # 시트1: 전체 통합
+    ws1 = wb.active
+    ws1.title = "전체통합"
+    hdr(ws1, ["품번","구분","김해_랙","김해_정가","김해_할인가","정관_랙","정관_정가","정관_할인가"], "FF4D00")
+    for sku in all_skus:
+        in_g = sku in g_map
+        in_j = sku in j_map
+        status = "양쪽" if (in_g and in_j) else ("김해만" if in_g else "정관만")
+        g = g_map[sku][0] if in_g else {}
+        j = j_map[sku][0] if in_j else {}
+        ws1.append([sku, status,
+            g.get("rack_name",""), g.get("price",""), g.get("sale_price",""),
+            j.get("rack_name",""), j.get("price",""), j.get("sale_price","")])
+
+    # 시트2: 양쪽 다 있음
+    ws2 = wb.create_sheet("양쪽공통")
+    hdr(ws2, ["품번","김해_랙","김해_정가","김해_할인가","정관_랙","정관_정가","정관_할인가","가격차"], "39D353")
+    for sku in all_skus:
+        if sku in g_map and sku in j_map:
+            g, j = g_map[sku][0], j_map[sku][0]
+            gp = g.get("sale_price") or g.get("price") or 0
+            jp = j.get("sale_price") or j.get("price") or 0
+            try: diff = int(jp) - int(gp)
+            except: diff = ""
+            ws2.append([sku,
+                g.get("rack_name",""), g.get("price",""), g.get("sale_price",""),
+                j.get("rack_name",""), j.get("price",""), j.get("sale_price",""), diff])
+
+    # 시트3: 김해만
+    ws3 = wb.create_sheet("김해만")
+    hdr(ws3, ["품번","랙","정가","할인가","할인율"], "58A6FF")
+    for sku in all_skus:
+        if sku in g_map and sku not in j_map:
+            g = g_map[sku][0]
+            ws3.append([sku, g.get("rack_name",""), g.get("price",""), g.get("sale_price",""), g.get("discount_rate","")])
+
+    # 시트4: 정관만
+    ws4 = wb.create_sheet("정관만")
+    hdr(ws4, ["품번","랙","정가","할인가","할인율"], "E3B341")
+    for sku in all_skus:
+        if sku in j_map and sku not in g_map:
+            j = j_map[sku][0]
+            ws4.append([sku, j.get("rack_name",""), j.get("price",""), j.get("sale_price",""), j.get("discount_rate","")])
+
+    for ws in [ws1, ws2, ws3, ws4]:
+        for col in ws.columns:
+            w = max((len(str(c.value or "")) for c in col), default=0)
+            ws.column_dimensions[col[0].column_letter].width = max(12, w + 2)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    date_str = __import__('datetime').datetime.now().strftime("%Y%m%d")
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="overlap_{date_str}.xlsx"'}
+    )
