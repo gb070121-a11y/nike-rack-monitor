@@ -190,14 +190,16 @@
 
     <!-- 복사 탭 -->
     <div id="pane-copy" style="display:none">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">다른 매장/랙 데이터를 이 랙으로 복사합니다</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">출처 매장:</div>
-      <select id="copy-from-store-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;" onchange="updateCopyRackListTab()">
+      <div style="background:var(--surface2);border-radius:6px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+        복사 출처: <span id="copy-source-label" style="color:var(--accent);font-weight:700"></span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">📌 복사할 매장:</div>
+      <select id="copy-to-store-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;" onchange="updateCopyToRackList()">
         <option value="gimhae">김해</option>
         <option value="jeonggwan">정관</option>
       </select>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">출처 랙:</div>
-      <select id="copy-from-rack-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:14px;"></select>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">📌 복사할 랙:</div>
+      <select id="copy-to-rack-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:14px;"></select>
       <button onclick="confirmCopyRackTab()" style="width:100%;padding:14px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:18px;letter-spacing:3px;cursor:pointer;">📋 복사</button>
     </div>
 
@@ -478,9 +480,15 @@ function switchPanelTab(tab) {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
   if (tab === 'copy') {
-    const fromStore = document.getElementById('copy-from-store-tab');
-    fromStore.value = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
-    updateCopyRackListTab();
+    const storeLabel = currentStore === 'gimhae' ? '김해' : '정관';
+    document.getElementById('copy-source-label').textContent = storeLabel + ' / ' + (selectedRack || '');
+    // 반대 매장을 먼저 표시
+    const opposite = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
+    const oppLabel = opposite === 'gimhae' ? '김해' : '정관';
+    const curLabel = currentStore === 'gimhae' ? '김해' : '정관';
+    const sel = document.getElementById('copy-to-store-tab');
+    sel.innerHTML = `<option value="${opposite}">${oppLabel}</option><option value="${currentStore}">${curLabel}</option>`;
+    updateCopyToRackList();
   }
   if (tab === 'manual' && document.getElementById('manual-rows').children.length === 0) {
     addManualRow();
@@ -613,40 +621,39 @@ async function confirmManual() {
 }
 
 // ── 복사 탭 ──
-function updateCopyRackListTab() {
-  const sel = document.getElementById('copy-from-rack-tab');
+function updateCopyToRackList() {
+  const sel = document.getElementById('copy-to-rack-tab');
   sel.innerHTML = ALL_RACK_NAMES.map(n =>
     `<option value="${n}" ${n===selectedRack?'selected':''}>${n}</option>`
   ).join('');
 }
 
 async function confirmCopyRackTab() {
-  const fromStore = document.getElementById('copy-from-store-tab').value;
-  const fromRack = document.getElementById('copy-from-rack-tab').value;
+  const toStore = document.getElementById('copy-to-store-tab').value;
+  const toRack = document.getElementById('copy-to-rack-tab').value;
   if (!selectedRack) return;
-  setRackState(selectedRack, 'uploading');
+
+  const fromStoreLabel = currentStore === 'gimhae' ? '김해' : '정관';
+  const toStoreLabel = toStore === 'gimhae' ? '김해' : '정관';
+
   try {
     const form = new FormData();
-    form.append('from_store', fromStore);
-    form.append('from_rack', fromRack);
-    form.append('to_store', currentStore);
-    form.append('to_rack', selectedRack);
+    form.append('from_store', currentStore);
+    form.append('from_rack', selectedRack);
+    form.append('to_store', toStore);
+    form.append('to_rack', toRack);
     const res = await fetch('/api/copy/rack', { method:'POST', body:form });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
-    doneRacks.add(selectedRack);
-    setRackState(selectedRack, 'done');
-    updateProgress();
-    const storeLabel = fromStore==='gimhae'?'김해':'정관';
+
     document.getElementById('result-content').innerHTML = `
-      <div class="result-row"><span style="color:var(--muted)">복사 출처</span><span style="font-family:var(--font-mono)">${storeLabel} / ${fromRack}</span></div>
-      <div class="result-row"><span style="color:var(--muted)">복사 대상</span><span style="font-family:var(--font-mono);color:var(--accent)">${selectedRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">복사 출처</span><span style="font-family:var(--font-mono)">${fromStoreLabel} / ${selectedRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">복사 대상</span><span style="font-family:var(--font-mono);color:var(--accent)">${toStoreLabel} / ${toRack}</span></div>
       <div class="result-row"><span style="color:var(--muted)">제품 수</span><span style="font-family:var(--font-mono);font-weight:700">${data.products_count}개</span></div>`;
     document.getElementById('result-section').classList.add('show');
     cancelUpload();
-    showToast(`✅ ${fromRack} → ${selectedRack} 복사 완료`, 'success');
+    showToast(`✅ ${fromStoreLabel}/${selectedRack} → ${toStoreLabel}/${toRack} 복사 완료`, 'success');
   } catch(e) {
-    setRackState(selectedRack, 'selected');
     showToast('❌ '+e.message, 'error');
   }
 }

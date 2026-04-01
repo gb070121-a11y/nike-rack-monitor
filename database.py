@@ -1,5 +1,4 @@
 import os
-import json
 from datetime import datetime
 from supabase import create_client, Client
 
@@ -22,11 +21,11 @@ def init_db():
 
 
 # ============================================================
-# RACK_MAP: 랙 이름 → 번호 매핑
+# 랙 맵 (매장별 분리)
 # ============================================================
-# 김해 랙 맵
+
 RACK_MAP_GIMHAE = {
-    "왼_벽랙": 1, "뒷_벽랙": 2, "오른_벽랙": 3,
+    "왼_벽랙": 1,  "뒷_벽랙": 2,  "오른_벽랙": 3,
     "1_양면A": 4,  "1_양면B": 5,
     "2_양면A": 6,  "2_양면B": 7,
     "3_양면A": 8,  "3_양면B": 9,
@@ -46,9 +45,8 @@ RACK_MAP_GIMHAE = {
     "15_양면A": 34,"15_양면B": 35,
 }
 
-# 정관 랙 맵
 RACK_MAP_JEONGGWAN = {
-    "왼_벽랙": 1, "뒷_벽랙": 2, "오른_벽랙": 3,
+    "왼_벽랙": 1,  "뒷_벽랙": 2,  "오른_벽랙": 3,
     "1_양면A": 4,  "1_양면B": 5,
     "2_양면A": 6,  "2_양면B": 7,
     "3_양면A": 8,  "3_양면B": 9,
@@ -67,17 +65,15 @@ RACK_MAP_JEONGGWAN = {
     "14_양면A": 32,"14_양면B": 33,
 }
 
-# 통합 맵 (하위호환)
-RACK_MAP = {**RACK_MAP_GIMHAE, **RACK_MAP_JEONGGWAN}
-
 def get_rack_number(store: str, rack_name: str) -> int:
     m = RACK_MAP_JEONGGWAN if store == "jeonggwan" else RACK_MAP_GIMHAE
     return m.get(rack_name, 99)
 
 
 # ============================================================
-# 변동 감지: 이전 제품 vs 신규 제품 비교
+# 변동 감지
 # ============================================================
+
 def detect_changes(old_products: list, new_products: list) -> dict:
     old_map = {p["sku"]: p for p in old_products if p.get("sku")}
     new_map = {p["sku"]: p for p in new_products if p.get("sku")}
@@ -88,17 +84,15 @@ def detect_changes(old_products: list, new_products: list) -> dict:
         if sku not in old_map:
             added.append(sku)
         else:
-            diffs = []
-            for field in ["price", "sale_price", "discount_rate"]:
-                ov, nv = old_map[sku].get(field), p.get(field)
-                if ov != nv:
-                    diffs.append({"field": field, "old": ov, "new": nv})
+            diffs = [
+                {"field": f, "old": old_map[sku].get(f), "new": p.get(f)}
+                for f in ["price", "sale_price", "discount_rate"]
+                if old_map[sku].get(f) != p.get(f)
+            ]
             if diffs:
                 changed.append({"sku": sku, "changes": diffs})
 
-    for sku in old_map:
-        if sku not in new_map:
-            removed.append(sku)
+    removed = [sku for sku in old_map if sku not in new_map]
 
     return {
         "added": added,
@@ -116,24 +110,21 @@ def detect_changes(old_products: list, new_products: list) -> dict:
 # ============================================================
 # 랙 스캔 저장 (upsert)
 # ============================================================
+
 def save_rack_scan(store: str, rack_name: str, products: list) -> dict:
     db = get_client()
     rack_number = get_rack_number(store, rack_name)
     scanned_at = now()
 
-    # 기존 데이터 조회
     existing = db.table("rack_master")\
-        .select("id,products")\
+        .select("products")\
         .eq("store", store)\
         .eq("rack_name", rack_name)\
         .execute().data
 
     old_products = existing[0]["products"] if existing else []
-
-    # 변동 감지
     changes = detect_changes(old_products, products)
 
-    # rack_master upsert
     db.table("rack_master").upsert({
         "store": store,
         "rack_name": rack_name,
@@ -143,7 +134,6 @@ def save_rack_scan(store: str, rack_name: str, products: list) -> dict:
         "last_scanned_at": scanned_at,
     }, on_conflict="store,rack_name").execute()
 
-    # 이력 저장 (변동 있을 때만)
     if changes["has_changes"] or not existing:
         db.table("rack_history").insert({
             "store": store,
@@ -165,64 +155,53 @@ def save_rack_scan(store: str, rack_name: str, products: list) -> dict:
 
 
 # ============================================================
-# 매장 전체 현황 조회 (캐시 최적화: 한 번에 가져오기)
+# 조회 함수
 # ============================================================
+
 def get_store_overview(store: str) -> dict:
     db = get_client()
-
     racks = db.table("rack_master")\
         .select("rack_name,rack_number,products,product_count,last_scanned_at")\
         .eq("store", store)\
         .order("rack_number")\
         .execute().data
 
-    total_products = sum(r["product_count"] for r in racks)
-    discounted = sum(
-        1 for r in racks for p in r["products"]
-        if p.get("sale_price") or p.get("discount_rate")
-    )
-
     return {
         "store": store,
         "racks": racks,
         "rack_count": len(racks),
-        "total_products": total_products,
-        "discounted_count": discounted,
+        "total_products": sum(r["product_count"] for r in racks),
+        "discounted_count": sum(
+            1 for r in racks for p in r["products"]
+            if p.get("sale_price") or p.get("discount_rate")
+        ),
     }
 
 
-# ============================================================
-# 최근 변동 이력 조회
-# ============================================================
 def get_recent_changes(store: str, limit: int = 50) -> list:
+    return db_query_changes(store, limit)
+
+def db_query_changes(store: str, limit: int) -> list:
     db = get_client()
-    rows = db.table("rack_history")\
+    return db.table("rack_history")\
         .select("rack_name,rack_number,changes,scanned_at,product_count")\
         .eq("store", store)\
         .order("scanned_at", desc=True)\
         .limit(limit)\
         .execute().data
-    return rows
 
 
-# ============================================================
-# 특정 랙 이력 조회
-# ============================================================
 def get_rack_history(store: str, rack_name: str, limit: int = 10) -> list:
     db = get_client()
-    rows = db.table("rack_history")\
+    return db.table("rack_history")\
         .select("products,product_count,changes,scanned_at")\
         .eq("store", store)\
         .eq("rack_name", rack_name)\
         .order("scanned_at", desc=True)\
         .limit(limit)\
         .execute().data
-    return rows
 
 
-# ============================================================
-# SKU 검색
-# ============================================================
 def search_sku(store: str, sku: str) -> list:
     db = get_client()
     racks = db.table("rack_master")\
@@ -230,22 +209,15 @@ def search_sku(store: str, sku: str) -> list:
         .eq("store", store)\
         .execute().data
 
-    results = []
     sku_lower = sku.lower()
-    for rack in racks:
-        for p in rack["products"]:
-            if sku_lower in (p.get("sku") or "").lower():
-                results.append({
-                    "rack_name": rack["rack_name"],
-                    "rack_number": rack["rack_number"],
-                    "product": p
-                })
-    return results
+    return [
+        {"rack_name": r["rack_name"], "rack_number": r["rack_number"], "product": p}
+        for r in racks
+        for p in r["products"]
+        if sku_lower in (p.get("sku") or "").lower()
+    ]
 
 
-# ============================================================
-# 랙 제품 삭제 (랙 자체 삭제)
-# ============================================================
 def delete_rack(store: str, rack_name: str):
     db = get_client()
     db.table("rack_master")\
@@ -255,10 +227,8 @@ def delete_rack(store: str, rack_name: str):
         .execute()
 
 
-# ============================================================
-# 엑셀용 전체 데이터
-# ============================================================
 def get_excel_data(store: str) -> dict:
-    overview = get_store_overview(store)
-    changes = get_recent_changes(store, limit=200)
-    return {"overview": overview, "changes": changes}
+    return {
+        "overview": get_store_overview(store),
+        "changes": db_query_changes(store, limit=200),
+    }
