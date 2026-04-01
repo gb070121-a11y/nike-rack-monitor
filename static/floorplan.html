@@ -75,7 +75,7 @@
   /* ═══ 평면도 공통 ═══ */
   .floorplan-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
   .floorplan-title{font-family:var(--font-display);font-size:15px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;text-align:center;}
-  .floor-outer{display:grid;grid-template-columns:1fr 32px;gap:6px;align-items:stretch;}
+  .floor-outer{display:grid;grid-template-columns:1fr 28px;gap:6px;align-items:stretch;}
   .floor-left{display:flex;flex-direction:column;gap:4px;}
   .floor-right{display:flex;}
 
@@ -100,7 +100,7 @@
   .mid-rack-wrap{display:flex;justify-content:flex-start;}
   .mid-rack{height:32px;width:55%;background:rgba(88,166,255,0.08);border-color:rgba(88,166,255,0.25);color:var(--blue);font-size:10px;}
   /* 세로 뒷벽랙 - 작게 */
-  .vert-rack{writing-mode:vertical-lr;text-orientation:mixed;transform:rotate(180deg);width:32px;height:100%;border-radius:6px;font-size:9px;}
+  .vert-rack{writing-mode:vertical-lr;text-orientation:mixed;transform:rotate(180deg);width:28px!important;min-width:28px!important;max-width:28px!important;height:100%;border-radius:6px;font-size:9px;}
 
   /* 범례 */
   .legend{display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
@@ -215,7 +215,7 @@
     <div class="floor-outer">
       <div class="floor-left" id="floor-left"></div>
       <div class="floor-right">
-        <div class="rack vert-rack rack-idle" id="rack-뒷_벽랙" onclick="selectRack('뒷_벽랙')">뒷_벽랙</div>
+        <div class="rack vert-rack rack-idle" id="rack-뒷_벽랙" onclick="selectRack('뒷_벽랙')" style="width:28px!important;min-width:28px!important;">뒷_벽랙</div>
       </div>
     </div>
     <div class="legend">
@@ -355,6 +355,13 @@ async function selectRack(rackName) {
   document.getElementById('file-input').value = '';
   document.getElementById('btn-confirm').disabled = true;
   document.getElementById('btn-confirm').textContent = '🔍 AI 분석 시작';
+  document.getElementById('manual-rows').innerHTML = '';
+  manualRowCount = 0;
+  // 탭 초기화 - scan 탭으로
+  ['scan','manual','copy'].forEach(t => {
+    document.getElementById('pane-'+t).style.display = t==='scan' ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t==='scan');
+  });
   resetUploadZone();
   pendingFiles = [];
   document.getElementById('upload-panel').scrollIntoView({ behavior:'smooth', block:'start' });
@@ -445,8 +452,6 @@ function cancelUpload() {
   // 수동 입력 초기화
   document.getElementById('manual-rows').innerHTML = '';
   manualRowCount = 0;
-  // 탭 초기화
-  switchPanelTab('scan');
   resetUploadZone();
 }
 
