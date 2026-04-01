@@ -138,6 +138,7 @@
     </div>
     <div class="preview-thumbs" id="preview-thumbs"></div>
     <button class="btn-confirm" id="btn-confirm" onclick="confirmUpload()" disabled>🔍 AI 분석 시작</button>
+    <button class="btn-copy-rack" id="btn-copy-rack" onclick="openCopyRackModal()" style="width:100%;margin-top:8px;padding:13px;background:transparent;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">📋 다른 매장에서 복사</button>
     <button class="btn-cancel" onclick="cancelUpload()">취소</button>
   </div>
 
@@ -162,6 +163,25 @@
     </div>
   </div>
 
+</div>
+
+<!-- 랙 복사 모달 -->
+<div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;" id="copy-rack-modal">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:380px;">
+    <div style="font-family:var(--font-display);font-size:20px;letter-spacing:2px;margin-bottom:6px">📋 랙 전체 복사</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="copy-rack-desc"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사 출처 매장:</div>
+    <select id="copy-from-store" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;">
+      <option value="gimhae">김해</option>
+      <option value="jeonggwan">정관</option>
+    </select>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사 출처 랙:</div>
+    <select id="copy-from-rack" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:16px;"></select>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeCopyRackModal()" style="flex:1;padding:12px;border-radius:6px;border:none;background:var(--surface2);color:var(--muted);font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">취소</button>
+      <button onclick="confirmCopyRack()" style="flex:1;padding:12px;border-radius:6px;border:none;background:var(--blue);color:#fff;font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">복사</button>
+    </div>
+  </div>
 </div>
 
 <nav class="bottom-nav">
@@ -396,6 +416,82 @@ function finishScan() {
   const total = doneRacks.size;
   showToast(`✅ ${total}개 랙 스캔 완료 — 대시보드에서 확인하세요`, 'success');
   setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
+}
+
+// 랙 목록
+const ALL_RACK_NAMES = [
+  '왼_벽랙','뒷_벽랙','오른_벽랙',
+  '1_양면A','1_양면B','2_양면A','2_양면B','3_양면A','3_양면B',
+  '4_양면A','4_양면B','5_양면A','5_양면B','중간A_랙',
+  '6_양면A','6_양면B','7_양면A','7_양면B','8_양면A','8_양면B',
+  '9_양면A','9_양면B','10_양면A','10_양면B','중간B_랙',
+  '11_양면A','11_양면B','12_양면A','12_양면B','13_양면A','13_양면B',
+  '14_양면A','14_양면B','15_양면A','15_양면B'
+];
+
+function openCopyRackModal() {
+  if (!selectedRack) return;
+  const modal = document.getElementById('copy-rack-modal');
+  document.getElementById('copy-rack-desc').textContent =
+    `→ 복사 대상: ${currentStore === 'gimhae' ? '김해' : '정관'} / ${selectedRack}`;
+
+  // 출처 매장 기본값: 반대 매장
+  const fromStore = document.getElementById('copy-from-store');
+  fromStore.value = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
+
+  // 랙 목록 채우기
+  updateCopyRackList();
+  fromStore.onchange = updateCopyRackList;
+
+  modal.style.display = 'flex';
+}
+
+function updateCopyRackList() {
+  const sel = document.getElementById('copy-from-rack');
+  sel.innerHTML = ALL_RACK_NAMES.map(n =>
+    `<option value="${n}" ${n === selectedRack ? 'selected' : ''}>${n}</option>`
+  ).join('');
+}
+
+function closeCopyRackModal() {
+  document.getElementById('copy-rack-modal').style.display = 'none';
+}
+
+async function confirmCopyRack() {
+  const fromStore = document.getElementById('copy-from-store').value;
+  const fromRack = document.getElementById('copy-from-rack').value;
+  if (!selectedRack) return;
+
+  closeCopyRackModal();
+  setRackState(selectedRack, 'uploading');
+
+  try {
+    const form = new FormData();
+    form.append('from_store', fromStore);
+    form.append('from_rack', fromRack);
+    form.append('to_store', currentStore);
+    form.append('to_rack', selectedRack);
+    const res = await fetch('/api/copy/rack', { method:'POST', body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    doneRacks.add(selectedRack);
+    setRackState(selectedRack, 'done');
+    updateProgress();
+
+    const storeLabel = fromStore === 'gimhae' ? '김해' : '정관';
+    document.getElementById('result-content').innerHTML = `
+      <div class="result-row"><span style="color:var(--muted)">복사 출처</span><span style="font-family:var(--font-mono)">${storeLabel} / ${fromRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">복사 대상</span><span style="font-family:var(--font-mono);color:var(--accent)">${selectedRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">제품 수</span><span style="font-family:var(--font-mono);font-weight:700">${data.products_count}개</span></div>`;
+    document.getElementById('result-section').classList.add('show');
+
+    cancelUpload();
+    showToast(`✅ ${fromRack} → ${selectedRack} 복사 완료 (${data.products_count}개)`, 'success');
+  } catch(e) {
+    setRackState(selectedRack, 'selected');
+    showToast('❌ ' + e.message, 'error');
+  }
 }
 
 function showToast(msg, type='') {

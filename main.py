@@ -432,3 +432,92 @@ async def overlap_excel():
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="overlap_{date_str}.xlsx"'}
     )
+
+
+# ============================================================
+# 복사 API
+# ============================================================
+
+@app.post("/api/copy/rack")
+async def copy_rack(
+    from_store: str = Form(...),
+    from_rack: str = Form(...),
+    to_store: str = Form(...),
+    to_rack: str = Form(...),
+):
+    """랙 전체 데이터를 다른 매장/랙으로 복사"""
+    from database import get_client, save_rack_scan
+
+    db = get_client()
+    src = db.table("rack_master")\
+        .select("products")\
+        .eq("store", from_store)\
+        .eq("rack_name", from_rack)\
+        .execute().data
+
+    if not src:
+        raise HTTPException(status_code=404, detail=f"{from_store} {from_rack} 데이터 없음")
+
+    products = src[0]["products"]
+    result = save_rack_scan(to_store, to_rack, products)
+
+    return JSONResponse({
+        "success": True,
+        "from": f"{from_store} / {from_rack}",
+        "to": f"{to_store} / {to_rack}",
+        "products_count": len(products),
+        "changes": result["changes"],
+    })
+
+
+@app.post("/api/copy/products")
+async def copy_products(
+    skus: List[str] = Form(...),
+    from_store: str = Form(...),
+    to_store: str = Form(...),
+    to_rack: str = Form(...),
+):
+    """선택한 품번들을 다른 매장/랙으로 복사 (기존 데이터에 추가)"""
+    from database import get_client, save_rack_scan
+
+    db = get_client()
+
+    # from_store 전체 데이터에서 해당 SKU 찾기
+    all_racks = db.table("rack_master")\
+        .select("products")\
+        .eq("store", from_store)\
+        .execute().data
+
+    sku_set = set(skus)
+    found_products = []
+    for rack in all_racks:
+        for p in rack["products"]:
+            if p.get("sku") in sku_set:
+                found_products.append(p)
+
+    if not found_products:
+        raise HTTPException(status_code=404, detail="해당 품번을 찾을 수 없습니다")
+
+    # to_rack 기존 데이터 가져오기
+    existing = db.table("rack_master")\
+        .select("products")\
+        .eq("store", to_store)\
+        .eq("rack_name", to_rack)\
+        .execute().data
+
+    existing_products = existing[0]["products"] if existing else []
+
+    # 중복 제거 후 합치기
+    existing_skus = {p.get("sku") for p in existing_products}
+    new_products = [p for p in found_products if p.get("sku") not in existing_skus]
+    merged = existing_products + new_products
+
+    result = save_rack_scan(to_store, to_rack, merged)
+
+    return JSONResponse({
+        "success": True,
+        "copied_count": len(new_products),
+        "skipped_count": len(found_products) - len(new_products),
+        "to": f"{to_store} / {to_rack}",
+        "total_products": len(merged),
+    })

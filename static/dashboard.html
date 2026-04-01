@@ -199,6 +199,7 @@
   <div class="sel-toolbar" id="sel-toolbar">
     <span class="sel-count" id="sel-count">0개 선택</span>
     <button class="btn-action" onclick="openMoveModal()">📦 랙 이동</button>
+    <button class="btn-action" style="color:var(--blue);border-color:var(--blue)" onclick="openCopyProductsModal()">📋 다른 매장으로 복사</button>
     <button class="btn-action" style="color:var(--red);border-color:var(--border)" onclick="deleteSelected()">🗑️ 선택 삭제</button>
     <button class="btn-action" onclick="clearSelection()">✕ 해제</button>
   </div>
@@ -230,6 +231,32 @@
     <!-- 결과 -->
     <div id="overlap-content" style="font-size:12px">
       <div style="text-align:center;padding:32px;color:var(--muted)">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 품번 복사 모달 -->
+<div class="modal-overlay" id="copy-products-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">📋 품번 복사</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="copy-products-desc"></div>
+
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사할 매장:</div>
+    <select class="modal-select" id="cp-to-store" onchange="updateCpRackList()">
+      <option value="gimhae">김해</option>
+      <option value="jeonggwan">정관</option>
+    </select>
+
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사할 랙:</div>
+    <select class="modal-select" id="cp-to-rack"></select>
+
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;padding:8px;background:var(--surface2);border-radius:6px">
+      💡 기존 랙 데이터에 추가됩니다. 이미 있는 품번은 건너뜁니다.
+    </div>
+
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="modal-btn cancel" onclick="closeCopyProductsModal()">취소</button>
+      <button class="modal-btn confirm" onclick="confirmCopyProducts()" style="background:var(--blue)">복사</button>
     </div>
   </div>
 </div>
@@ -491,6 +518,75 @@ function exportCSV() {
 async function deleteSelected() {
   if (!selectedProducts.size) return;
   showToast('개별 제품 삭제는 랙 재스캔으로 반영됩니다', 'error');
+}
+
+// 전체 랙 목록
+const ALL_RACK_NAMES = [
+  '왼_벽랙','뒷_벽랙','오른_벽랙',
+  '1_양면A','1_양면B','2_양면A','2_양면B','3_양면A','3_양면B',
+  '4_양면A','4_양면B','5_양면A','5_양면B','중간A_랙',
+  '6_양면A','6_양면B','7_양면A','7_양면B','8_양면A','8_양면B',
+  '9_양면A','9_양면B','10_양면A','10_양면B','중간B_랙',
+  '11_양면A','11_양면B','12_양면A','12_양면B','13_양면A','13_양면B',
+  '14_양면A','14_양면B','15_양면A','15_양면B'
+];
+
+function updateCpRackList() {
+  const sel = document.getElementById('cp-to-rack');
+  sel.innerHTML = ALL_RACK_NAMES.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+function openCopyProductsModal() {
+  if (!selectedProducts.size) return;
+  const skus = [...selectedProducts].map(k => k.split('::')[1]).filter(Boolean);
+  document.getElementById('copy-products-desc').textContent =
+    `선택된 품번 ${skus.length}개를 다른 매장/랙에 추가합니다`;
+
+  // 현재 매장의 반대 매장을 기본값으로
+  const cpStore = document.getElementById('cp-to-store');
+  cpStore.value = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
+  updateCpRackList();
+  document.getElementById('copy-products-modal').classList.add('show');
+}
+
+function closeCopyProductsModal() {
+  document.getElementById('copy-products-modal').classList.remove('show');
+}
+
+async function confirmCopyProducts() {
+  const toStore = document.getElementById('cp-to-store').value;
+  const toRack = document.getElementById('cp-to-rack').value;
+
+  // SKU 추출 (rack_name::sku 형식)
+  const skus = [...selectedProducts].map(k => k.split('::')[1]).filter(Boolean);
+  if (!skus.length) return;
+
+  try {
+    const form = new FormData();
+    skus.forEach(s => form.append('skus', s));
+    form.append('from_store', currentStore);
+    form.append('to_store', toStore);
+    form.append('to_rack', toRack);
+
+    const res = await fetch('/api/copy/products', { method:'POST', body:form });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || '복사 실패');
+    }
+    const data = await res.json();
+
+    closeCopyProductsModal();
+    clearSelection();
+
+    const storeLabel = toStore === 'gimhae' ? '김해' : '정관';
+    showToast(
+      `✅ ${storeLabel} / ${toRack} 에 ${data.copied_count}개 복사 완료` +
+      (data.skipped_count ? ` (중복 ${data.skipped_count}개 건너뜀)` : ''),
+      'success'
+    );
+  } catch(e) {
+    showToast('❌ ' + e.message, 'error');
+  }
 }
 
 function fmt(n) { if (!n && n!==0) return '-'; return Number(n).toLocaleString('ko-KR')+'원'; }
