@@ -521,3 +521,81 @@ async def copy_products(
         "to": f"{to_store} / {to_rack}",
         "total_products": len(merged),
     })
+
+
+# ============================================================
+# 수동 입력 API
+# ============================================================
+
+@app.post("/api/manual/rack")
+async def manual_input_rack(
+    store: str = Form(...),
+    rack_name: str = Form(...),
+    products_json: str = Form(...),  # JSON string
+    mode: str = Form(default="replace"),  # replace or append
+):
+    """수동으로 제품 정보 입력 (replace: 전체 교체, append: 추가)"""
+    import json as _json
+    from database import get_client, save_rack_scan
+
+    try:
+        new_products = _json.loads(products_json)
+    except Exception:
+        raise HTTPException(status_code=400, detail="products_json 파싱 실패")
+
+    # 데이터 정제
+    cleaned = []
+    for p in new_products:
+        sku = str(p.get("sku", "")).strip()
+        if not sku:
+            continue
+        price = p.get("price")
+        sale_price = p.get("sale_price")
+        discount_rate = p.get("discount_rate")
+
+        # 할인율로 할인가 자동 계산
+        if price and discount_rate and not sale_price:
+            try:
+                sale_price = round(int(price) * (1 - int(discount_rate) / 100))
+            except:
+                pass
+
+        # 할인가로 할인율 자동 계산
+        if price and sale_price and not discount_rate:
+            try:
+                discount_rate = round((1 - int(sale_price) / int(price)) * 100)
+            except:
+                pass
+
+        cleaned.append({
+            "sku": sku,
+            "name": str(p.get("name", "")).strip(),
+            "price": int(price) if price else None,
+            "sale_price": int(sale_price) if sale_price else None,
+            "discount_rate": int(discount_rate) if discount_rate else None,
+            "source": "manual",
+        })
+
+    if mode == "append":
+        # 기존 데이터에 추가 (중복 SKU는 덮어쓰기)
+        from database import get_client
+        db = get_client()
+        existing = db.table("rack_master")\
+            .select("products")\
+            .eq("store", store)\
+            .eq("rack_name", rack_name)\
+            .execute().data
+        existing_products = existing[0]["products"] if existing else []
+        new_skus = {p["sku"] for p in cleaned}
+        merged = [p for p in existing_products if p.get("sku") not in new_skus] + cleaned
+        result = save_rack_scan(store, rack_name, merged)
+    else:
+        result = save_rack_scan(store, rack_name, cleaned)
+
+    return JSONResponse({
+        "success": True,
+        "rack_name": rack_name,
+        "products_saved": len(cleaned),
+        "changes": result["changes"],
+        "mode": mode,
+    })

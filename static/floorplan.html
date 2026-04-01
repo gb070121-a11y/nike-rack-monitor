@@ -57,6 +57,21 @@
   .pill-r{background:rgba(248,81,73,0.15);color:var(--red);}
   .pill-y{background:rgba(227,179,65,0.15);color:var(--yellow);}
 
+  /* 패널 탭 */
+  .panel-tab{padding:7px 14px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .panel-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  /* 수동 입력 행 */
+  .manual-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;position:relative;}
+  .manual-row-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .manual-row-num{font-family:var(--font-mono);font-size:11px;color:var(--accent);}
+  .manual-del{background:transparent;border:none;color:var(--red);font-size:14px;cursor:pointer;padding:2px 6px;}
+  .manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .manual-field{display:flex;flex-direction:column;gap:3px;}
+  .manual-label{font-size:10px;color:var(--muted);font-family:var(--font-mono);}
+  .manual-input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:5px;font-family:var(--font-mono);font-size:13px;outline:none;width:100%;transition:border-color 0.2s;}
+  .manual-input:focus{border-color:var(--accent);}
+  .manual-input.sku-input{grid-column:1/-1;}
+
   /* ═══ 평면도 공통 ═══ */
   .floorplan-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
   .floorplan-title{font-family:var(--font-display);font-size:15px;letter-spacing:3px;color:var(--muted);margin-bottom:12px;text-align:center;}
@@ -130,16 +145,63 @@
 
   <div class="upload-panel" id="upload-panel">
     <div class="upload-panel-title" id="panel-title">랙 선택</div>
-    <div class="upload-panel-sub">사진을 드래그하거나 클릭해서 업로드하세요</div>
-    <div class="upload-zone" id="upload-zone">
-      <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
-      <div class="upload-zone-icon">📸</div>
-      <div class="upload-zone-text">사진을 <span>드래그앤드롭</span>하거나<br>클릭해서 선택하세요</div>
+
+    <!-- 탭 -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="panel-tab active" id="tab-scan" onclick="switchPanelTab('scan')">📸 AI 스캔</button>
+      <button class="panel-tab" id="tab-manual" onclick="switchPanelTab('manual')">✏️ 수동 입력</button>
+      <button class="panel-tab" id="tab-copy" onclick="switchPanelTab('copy')" style="border-color:var(--blue);color:var(--blue)">📋 복사</button>
     </div>
-    <div class="preview-thumbs" id="preview-thumbs"></div>
-    <button class="btn-confirm" id="btn-confirm" onclick="confirmUpload()" disabled>🔍 AI 분석 시작</button>
-    <button class="btn-copy-rack" id="btn-copy-rack" onclick="openCopyRackModal()" style="width:100%;margin-top:8px;padding:13px;background:transparent;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">📋 다른 매장에서 복사</button>
-    <button class="btn-cancel" onclick="cancelUpload()">취소</button>
+
+    <!-- AI 스캔 탭 -->
+    <div id="pane-scan">
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" multiple accept="image/*" onchange="handleFiles(this.files)">
+        <div class="upload-zone-icon">📸</div>
+        <div class="upload-zone-text">사진을 <span>드래그앤드롭</span>하거나<br>클릭해서 선택하세요</div>
+      </div>
+      <div class="preview-thumbs" id="preview-thumbs"></div>
+      <button class="btn-confirm" id="btn-confirm" onclick="confirmUpload()" disabled>🔍 AI 분석 시작</button>
+    </div>
+
+    <!-- 수동 입력 탭 -->
+    <div id="pane-manual" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+        <div style="font-size:12px;color:var(--muted)">입력 모드:</div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+          <input type="radio" name="manual-mode" value="append" checked style="accent-color:var(--accent)"> 추가
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+          <input type="radio" name="manual-mode" value="replace" style="accent-color:var(--accent)"> 전체 교체
+        </label>
+      </div>
+
+      <div id="manual-rows">
+        <!-- 동적으로 생성 -->
+      </div>
+
+      <button onclick="addManualRow()" style="width:100%;padding:9px;margin-top:6px;background:transparent;border:1px dashed var(--border);border-radius:6px;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        ＋ 품번 추가
+      </button>
+      <button onclick="confirmManual()" style="width:100%;margin-top:10px;padding:14px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:18px;letter-spacing:3px;cursor:pointer;">💾 저장</button>
+    </div>
+
+    <!-- 복사 탭 -->
+    <div id="pane-copy" style="display:none">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">다른 매장/랙 데이터를 이 랙으로 복사합니다</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">출처 매장:</div>
+      <select id="copy-from-store-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;" onchange="updateCopyRackListTab()">
+        <option value="gimhae">김해</option>
+        <option value="jeonggwan">정관</option>
+      </select>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:5px">출처 랙:</div>
+      <select id="copy-from-rack-tab" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:14px;"></select>
+      <button onclick="confirmCopyRackTab()" style="width:100%;padding:14px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:18px;letter-spacing:3px;cursor:pointer;">📋 복사</button>
+    </div>
+
+    <button class="btn-cancel" onclick="cancelUpload()" style="margin-top:8px">취소</button>
   </div>
 
   <div class="result-section" id="result-section">
@@ -163,25 +225,6 @@
     </div>
   </div>
 
-</div>
-
-<!-- 랙 복사 모달 -->
-<div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;" id="copy-rack-modal">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:380px;">
-    <div style="font-family:var(--font-display);font-size:20px;letter-spacing:2px;margin-bottom:6px">📋 랙 전체 복사</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="copy-rack-desc"></div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사 출처 매장:</div>
-    <select id="copy-from-store" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;">
-      <option value="gimhae">김해</option>
-      <option value="jeonggwan">정관</option>
-    </select>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">복사 출처 랙:</div>
-    <select id="copy-from-rack" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;width:100%;font-family:var(--font-mono);font-size:13px;margin-bottom:16px;"></select>
-    <div style="display:flex;gap:8px;">
-      <button onclick="closeCopyRackModal()" style="flex:1;padding:12px;border-radius:6px;border:none;background:var(--surface2);color:var(--muted);font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">취소</button>
-      <button onclick="confirmCopyRack()" style="flex:1;padding:12px;border-radius:6px;border:none;background:var(--blue);color:#fff;font-family:var(--font-display);font-size:16px;letter-spacing:2px;cursor:pointer;">복사</button>
-    </div>
-  </div>
 </div>
 
 <nav class="bottom-nav">
@@ -399,6 +442,11 @@ function cancelUpload() {
   document.getElementById('file-input').value = '';
   document.getElementById('btn-confirm').disabled = true;
   document.getElementById('btn-confirm').textContent = '🔍 AI 분석 시작';
+  // 수동 입력 초기화
+  document.getElementById('manual-rows').innerHTML = '';
+  manualRowCount = 0;
+  // 탭 초기화
+  switchPanelTab('scan');
   resetUploadZone();
 }
 
@@ -418,6 +466,186 @@ function finishScan() {
   setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
 }
 
+// ── 패널 탭 전환 ──
+function switchPanelTab(tab) {
+  ['scan','manual','copy'].forEach(t => {
+    document.getElementById('pane-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab === 'copy') {
+    const fromStore = document.getElementById('copy-from-store-tab');
+    fromStore.value = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
+    updateCopyRackListTab();
+  }
+  if (tab === 'manual' && document.getElementById('manual-rows').children.length === 0) {
+    addManualRow();
+  }
+}
+
+// ── 수동 입력 ──
+let manualRowCount = 0;
+
+function addManualRow() {
+  manualRowCount++;
+  const n = manualRowCount;
+  const div = document.createElement('div');
+  div.className = 'manual-row';
+  div.id = 'manual-row-'+n;
+  div.innerHTML = `
+    <div class="manual-row-header">
+      <span class="manual-row-num">#${n}</span>
+      <button class="manual-del" onclick="removeManualRow(${n})">✕</button>
+    </div>
+    <div class="manual-grid">
+      <div class="manual-field" style="grid-column:1/-1">
+        <span class="manual-label">품번 *</span>
+        <input class="manual-input sku-input" id="m-sku-${n}" placeholder="FQ8325 300" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="manual-field">
+        <span class="manual-label">정가 (원)</span>
+        <input class="manual-input" id="m-price-${n}" type="number" placeholder="89000" oninput="autoCalcManual(${n})">
+      </div>
+      <div class="manual-field">
+        <span class="manual-label">할인율 (%)</span>
+        <input class="manual-input" id="m-disc-${n}" type="number" placeholder="30" min="0" max="100" oninput="autoCalcManual(${n})">
+      </div>
+      <div class="manual-field" style="grid-column:1/-1">
+        <span class="manual-label">할인가 (원) — 자동계산 또는 직접입력</span>
+        <input class="manual-input" id="m-sale-${n}" type="number" placeholder="62300" oninput="autoCalcDiscRate(${n})">
+      </div>
+    </div>`;
+  document.getElementById('manual-rows').appendChild(div);
+  document.getElementById('m-sku-'+n).focus();
+}
+
+function removeManualRow(n) {
+  const el = document.getElementById('manual-row-'+n);
+  if (el) el.remove();
+}
+
+function autoCalcManual(n) {
+  const price = parseInt(document.getElementById('m-price-'+n).value);
+  const disc = parseInt(document.getElementById('m-disc-'+n).value);
+  if (price && disc && disc > 0 && disc < 100) {
+    document.getElementById('m-sale-'+n).value = Math.round(price * (1 - disc/100));
+  }
+}
+
+function autoCalcDiscRate(n) {
+  const price = parseInt(document.getElementById('m-price-'+n).value);
+  const sale = parseInt(document.getElementById('m-sale-'+n).value);
+  if (price && sale && sale < price) {
+    document.getElementById('m-disc-'+n).value = Math.round((1 - sale/price)*100);
+  }
+}
+
+function getManualProducts() {
+  const rows = document.getElementById('manual-rows').querySelectorAll('.manual-row');
+  const products = [];
+  let hasError = false;
+  rows.forEach(row => {
+    const n = row.id.replace('manual-row-','');
+    const sku = document.getElementById('m-sku-'+n)?.value?.trim();
+    if (!sku) return;
+    const price = document.getElementById('m-price-'+n)?.value;
+    const disc = document.getElementById('m-disc-'+n)?.value;
+    const sale = document.getElementById('m-sale-'+n)?.value;
+    products.push({
+      sku, name: '',
+      price: price ? parseInt(price) : null,
+      discount_rate: disc ? parseInt(disc) : null,
+      sale_price: sale ? parseInt(sale) : null,
+    });
+  });
+  return products;
+}
+
+async function confirmManual() {
+  if (!selectedRack) return;
+  const products = getManualProducts();
+  if (!products.length) { showToast('품번을 하나 이상 입력하세요', 'error'); return; }
+
+  const mode = document.querySelector('input[name="manual-mode"]:checked').value;
+  setRackState(selectedRack, 'uploading');
+
+  try {
+    const form = new FormData();
+    form.append('store', currentStore);
+    form.append('rack_name', selectedRack);
+    form.append('products_json', JSON.stringify(products));
+    form.append('mode', mode);
+    const res = await fetch('/api/manual/rack', { method:'POST', body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    doneRacks.add(selectedRack);
+    setRackState(selectedRack, 'done');
+    updateProgress();
+
+    const ch = data.changes || {};
+    const s = ch.summary || {};
+    let diffHtml = '';
+    if (ch.has_changes) {
+      diffHtml = `<div class="result-row"><span style="color:var(--muted)">변동 내역</span>
+        <div class="diff-pills">
+          ${s.added?`<span class="diff-pill pill-g">+${s.added} 신규</span>`:''}
+          ${s.removed?`<span class="diff-pill pill-r">-${s.removed} 제거</span>`:''}
+          ${s.changed?`<span class="diff-pill pill-y">~${s.changed} 변동</span>`:''}
+        </div></div>`;
+    }
+    document.getElementById('result-content').innerHTML = `
+      <div class="result-row"><span style="color:var(--muted)">랙</span><span style="font-family:var(--font-mono);color:var(--accent)">${selectedRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">저장된 품번</span><span style="font-family:var(--font-mono);font-weight:700">${data.products_saved}개</span></div>
+      <div class="result-row"><span style="color:var(--muted)">입력 방식</span><span style="font-family:var(--font-mono)">수동 ${mode==='append'?'추가':'전체교체'}</span></div>
+      ${diffHtml}`;
+    document.getElementById('result-section').classList.add('show');
+    cancelUpload();
+    showToast(`✅ ${selectedRack} — ${data.products_saved}개 저장 완료`, 'success');
+  } catch(e) {
+    setRackState(selectedRack, 'selected');
+    showToast('❌ '+e.message, 'error');
+  }
+}
+
+// ── 복사 탭 ──
+function updateCopyRackListTab() {
+  const sel = document.getElementById('copy-from-rack-tab');
+  sel.innerHTML = ALL_RACK_NAMES.map(n =>
+    `<option value="${n}" ${n===selectedRack?'selected':''}>${n}</option>`
+  ).join('');
+}
+
+async function confirmCopyRackTab() {
+  const fromStore = document.getElementById('copy-from-store-tab').value;
+  const fromRack = document.getElementById('copy-from-rack-tab').value;
+  if (!selectedRack) return;
+  setRackState(selectedRack, 'uploading');
+  try {
+    const form = new FormData();
+    form.append('from_store', fromStore);
+    form.append('from_rack', fromRack);
+    form.append('to_store', currentStore);
+    form.append('to_rack', selectedRack);
+    const res = await fetch('/api/copy/rack', { method:'POST', body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    doneRacks.add(selectedRack);
+    setRackState(selectedRack, 'done');
+    updateProgress();
+    const storeLabel = fromStore==='gimhae'?'김해':'정관';
+    document.getElementById('result-content').innerHTML = `
+      <div class="result-row"><span style="color:var(--muted)">복사 출처</span><span style="font-family:var(--font-mono)">${storeLabel} / ${fromRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">복사 대상</span><span style="font-family:var(--font-mono);color:var(--accent)">${selectedRack}</span></div>
+      <div class="result-row"><span style="color:var(--muted)">제품 수</span><span style="font-family:var(--font-mono);font-weight:700">${data.products_count}개</span></div>`;
+    document.getElementById('result-section').classList.add('show');
+    cancelUpload();
+    showToast(`✅ ${fromRack} → ${selectedRack} 복사 완료`, 'success');
+  } catch(e) {
+    setRackState(selectedRack, 'selected');
+    showToast('❌ '+e.message, 'error');
+  }
+}
+
 // 랙 목록
 const ALL_RACK_NAMES = [
   '왼_벽랙','뒷_벽랙','오른_벽랙',
@@ -429,70 +657,13 @@ const ALL_RACK_NAMES = [
   '14_양면A','14_양면B','15_양면A','15_양면B'
 ];
 
-function openCopyRackModal() {
-  if (!selectedRack) return;
-  const modal = document.getElementById('copy-rack-modal');
-  document.getElementById('copy-rack-desc').textContent =
-    `→ 복사 대상: ${currentStore === 'gimhae' ? '김해' : '정관'} / ${selectedRack}`;
 
-  // 출처 매장 기본값: 반대 매장
-  const fromStore = document.getElementById('copy-from-store');
-  fromStore.value = currentStore === 'gimhae' ? 'jeonggwan' : 'gimhae';
 
-  // 랙 목록 채우기
-  updateCopyRackList();
-  fromStore.onchange = updateCopyRackList;
 
-  modal.style.display = 'flex';
-}
 
-function updateCopyRackList() {
-  const sel = document.getElementById('copy-from-rack');
-  sel.innerHTML = ALL_RACK_NAMES.map(n =>
-    `<option value="${n}" ${n === selectedRack ? 'selected' : ''}>${n}</option>`
-  ).join('');
-}
 
-function closeCopyRackModal() {
-  document.getElementById('copy-rack-modal').style.display = 'none';
-}
 
-async function confirmCopyRack() {
-  const fromStore = document.getElementById('copy-from-store').value;
-  const fromRack = document.getElementById('copy-from-rack').value;
-  if (!selectedRack) return;
-
-  closeCopyRackModal();
-  setRackState(selectedRack, 'uploading');
-
-  try {
-    const form = new FormData();
-    form.append('from_store', fromStore);
-    form.append('from_rack', fromRack);
-    form.append('to_store', currentStore);
-    form.append('to_rack', selectedRack);
-    const res = await fetch('/api/copy/rack', { method:'POST', body:form });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-
-    doneRacks.add(selectedRack);
-    setRackState(selectedRack, 'done');
-    updateProgress();
-
-    const storeLabel = fromStore === 'gimhae' ? '김해' : '정관';
-    document.getElementById('result-content').innerHTML = `
-      <div class="result-row"><span style="color:var(--muted)">복사 출처</span><span style="font-family:var(--font-mono)">${storeLabel} / ${fromRack}</span></div>
-      <div class="result-row"><span style="color:var(--muted)">복사 대상</span><span style="font-family:var(--font-mono);color:var(--accent)">${selectedRack}</span></div>
-      <div class="result-row"><span style="color:var(--muted)">제품 수</span><span style="font-family:var(--font-mono);font-weight:700">${data.products_count}개</span></div>`;
-    document.getElementById('result-section').classList.add('show');
-
-    cancelUpload();
-    showToast(`✅ ${fromRack} → ${selectedRack} 복사 완료 (${data.products_count}개)`, 'success');
-  } catch(e) {
-    setRackState(selectedRack, 'selected');
-    showToast('❌ ' + e.message, 'error');
-  }
-}
+async 
 
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
