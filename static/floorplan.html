@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>RACK MONITOR — 랙별등록</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="랙모니터">
+  <meta name="theme-color" content="#708090">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;--accent:#ff4d00;--green:#39d353;--red:#f85149;--yellow:#e3b341;--blue:#58a6ff;--text:#e8e8e8;--muted:#555;--font-display:'Bebas Neue',sans-serif;--font-body:'Noto Sans KR',sans-serif;--font-mono:'JetBrains Mono',monospace;}
@@ -512,7 +519,7 @@ function addManualRow() {
     <div class="manual-grid">
       <div class="manual-field" style="grid-column:1/-1">
         <span class="manual-label">품번 *</span>
-        <input class="manual-input sku-input" id="m-sku-${n}" placeholder="FQ8325 300" oninput="this.value=this.value.toUpperCase()">
+        <input class="manual-input sku-input" id="m-sku-${n}" placeholder="FQ8325 300 (공백→- 자동변환)" oninput="this.value=normalizeSKU(this.value)">
       </div>
       <div class="manual-field">
         <span class="manual-label">정가 (원)</span>
@@ -674,6 +681,17 @@ const ALL_RACK_NAMES = [
 
 
 
+
+function normalizeSKU(val) {
+  val = val.toUpperCase();
+  // 입력 완료 패턴: AA1234 111 or 123456 111 → AA1234-111 or 123456-111
+  val = val.replace(/^([A-Z]{2}[0-9]{4})\s([0-9]{3})$/, '$1-$2');
+  val = val.replace(/^([0-9]{6})\s([0-9]{3})$/, '$1-$2');
+  // 입력 중 실시간: 6자리 입력 후 공백 치면 바로 -로
+  val = val.replace(/^([A-Z]{2}[0-9]{4})\s$/, '$1-');
+  val = val.replace(/^([0-9]{6})\s$/, '$1-');
+  return val;
+}
 
 function showToast(msg, type='') {
   const t = document.getElementById('toast');

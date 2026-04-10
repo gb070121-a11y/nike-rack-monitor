@@ -274,9 +274,16 @@ async def manual_input_rack(
     except Exception:
         raise HTTPException(status_code=400, detail="products_json 파싱 실패")
 
+    def normalize_sku(sku: str) -> str:
+        sku = sku.strip().upper()
+        # 공백을 - 로 변환: AA1234 111 → AA1234-111
+        sku = re.sub(r'^([A-Z]{2}[0-9]{4})\s+([0-9]{3})$', r'-', sku)
+        sku = re.sub(r'^([0-9]{6})\s+([0-9]{3})$', r'-', sku)
+        return sku
+
     cleaned = []
     for p in new_products:
-        sku = str(p.get("sku", "")).strip()
+        sku = normalize_sku(str(p.get("sku", "")))
         if not sku:
             continue
         price = p.get("price")
